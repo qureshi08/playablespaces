@@ -58,10 +58,13 @@ export function buildRoom(scene, env) {
       const m = new THREE.Mesh(new THREE.BoxGeometry(sx, 0.02, sz), led2); m.position.set(x, R.K + 0.125, z); root.add(m);
     }
     // a name plate on the front of the plinth
-    const label = canvasTex(2048, 256, (g, W, Hh) => {
-      g.clearRect(0, 0, W, Hh); g.fillStyle = '#c8b28f'; g.font = '700 150px Outfit, sans-serif';
+    const drawPlate = (g, W, Hh) => {
+      g.clearRect(0, 0, W, Hh); g.fillStyle = '#c8b28f'; g.font = '800 140px Montserrat, sans-serif';
       g.textAlign = 'center'; g.textBaseline = 'middle'; g.globalAlpha = 0.85; g.fillText('PLAYABLE SPACES', W / 2, Hh / 2 + 6);
-    });
+    };
+    const label = canvasTex(2048, 256, drawPlate);
+    // the canvas draws before the web font arrives; redraw once it has
+    document.fonts.load('800 140px Montserrat').then(() => { const c = label.image; drawPlate(c.getContext('2d'), c.width, c.height); label.needsUpdate = true; });
     const plate = new THREE.Mesh(new THREE.PlaneGeometry(4.2, 0.52), new THREE.MeshStandardMaterial({ map: label, transparent: true, roughness: 0.5, metalness: 0.4, emissive: '#3a2a14', emissiveMap: label, emissiveIntensity: 0.6 }));
     plate.position.set(-1.6, -1.05, ez1 - inset + 0.004); plate.rotation.x = 0; root.add(plate);
     for (const [x, z] of [[-4, ez1 - 0.3], [0, ez1 - 0.3], [4, ez1 - 0.3], [ex1 - 0.3, -2.5], [ex1 - 0.3, 1]]) roomLights.push([x, R.TOP - 0.6, z, '#ffb05e', 3, 0.9]);

@@ -406,6 +406,9 @@ function applyDaylight(h) {
 // camera: orbit around a target, pan, zoom, keys, cinematic mode
 // ---------------------------------------------------------------------------------------------
 const HOME = { target: new THREE.Vector3(0.2, -0.35, 0.3), yaw: 0.3, pitch: 0.54, dist: 27 };
+// on a tall phone screen the flat is wider than the view, so back the camera off until about 13.6 m fits across
+const homeDist = () => Math.max(27, 6.8 / (Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * camera.aspect));
+HOME.dist = homeDist();
 const cam = { target: HOME.target.clone(), yaw: HOME.yaw, pitch: HOME.pitch, dist: HOME.dist };
 const camGoal = { target: HOME.target.clone(), yaw: HOME.yaw, pitch: HOME.pitch, dist: HOME.dist };
 function updateCamera(dt) {
@@ -848,7 +851,7 @@ canvas.addEventListener('pointerleave', () => { if (!press) { tip(null); setHove
 canvas.addEventListener('wheel', e => {
   e.preventDefault();
   if (drag && drag.kind === 'move' && drag.item) { turnHeld(e.deltaY > 0 ? 1 : -1); return; }
-  camGoal.dist = clamp(camGoal.dist * Math.exp(e.deltaY * 0.0011), 4, 40);
+  camGoal.dist = clamp(camGoal.dist * Math.exp(e.deltaY * 0.0011), 4, Math.max(40, HOME.dist * 1.2));
 }, { passive: false });
 let lastSurfacePoint = null;
 function clampTarget() { camGoal.target.x = clamp(camGoal.target.x, -8, 8); camGoal.target.z = clamp(camGoal.target.z, -7, 7); }
@@ -989,12 +992,12 @@ function dragMoveNow(e) {
     tip(ok ? null : '<b>No room for it here</b>', x, y);
   }
   drag.ok = ok;
-  tintItem(it, ok ? null : '#ff6b5a');
+  tintItem(it, ok ? null : '#FF7723');
 }
-// a soft footprint on the floor (or wall) under a held piece: cyan where it fits, red where it doesn't
+// a soft footprint on the floor (or wall) under a held piece: green where it fits, orange where it doesn't
 // drawn as a rounded rectangle: a bright edge line over a faint fill, sized in metres so the corners stay round on any piece
 const marker = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.ShaderMaterial({
-  uniforms: { uSize: { value: new THREE.Vector2(1, 1) }, uCol: { value: new THREE.Color('#7fe3ff') }, uA: { value: 1 }, uFill: { value: 0.14 } },
+  uniforms: { uSize: { value: new THREE.Vector2(1, 1) }, uCol: { value: new THREE.Color('#44B977') }, uA: { value: 1 }, uFill: { value: 0.14 } },
   vertexShader: 'varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
   fragmentShader: 'varying vec2 vUv;uniform vec2 uSize;uniform vec3 uCol;uniform float uA;uniform float uFill;'
     + 'void main(){vec2 p=(vUv-.5)*uSize;vec2 q=abs(p)-uSize*.5+.09;float d=length(max(q,0.))+min(max(q.x,q.y),0.)-.09;'
@@ -1008,7 +1011,7 @@ function tintItem(it, color) {
   if (!it || !it.g.visible) { marker.visible = false; return; }
   const P = PIECES[it.type];
   marker.visible = true;
-  marker.material.uniforms.uCol.value.set(color || '#7fe3ff'); marker.material.uniforms.uA.value = 1; marker.material.uniforms.uFill.value = color ? 0.26 : 0.14;
+  marker.material.uniforms.uCol.value.set(color || '#44B977'); marker.material.uniforms.uA.value = 1; marker.material.uniforms.uFill.value = color ? 0.26 : 0.14;
   if (P.wall) {
     const w = wallPlanes[it.plane]; if (!w) { marker.visible = false; return; }
     marker.scale.set(P.wall[0] + MARK_PAD, P.wall[1] + MARK_PAD, 1); marker.material.uniforms.uSize.value.set(marker.scale.x, marker.scale.y);
@@ -1062,7 +1065,7 @@ function turnHeld(dir) {
   const it = drag.item; if (!it || PIECES[it.type].wall) return;
   it.rot += dir * Math.PI / 4;
   const [x, z] = snapFloor(it.type, it.x, it.z, it.rot); it.x = x; it.z = z;
-  drag.ok = fits(it.type, x, z, it.rot, it); applyPose(it); tintItem(it, drag.ok ? null : '#ff6b5a');
+  drag.ok = fits(it.type, x, z, it.rot, it); applyPose(it); tintItem(it, drag.ok ? null : '#FF7723');
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -1116,20 +1119,20 @@ $('#save').onclick = () => {
   composer.render();
   const shot = renderer.domElement, W = 1800, Hh = 1000, out = document.createElement('canvas'); out.width = W; out.height = Hh;
   const g = out.getContext('2d');
-  g.fillStyle = '#0d1220'; g.fillRect(0, 0, W, Hh);
+  g.fillStyle = '#EEE9D6'; g.fillRect(0, 0, W, Hh);
   const sw = W - 560, sh = Hh, ar = shot.width / shot.height;
   let cw = shot.width, ch = shot.width / (sw / sh); if (ch > shot.height) { ch = shot.height; cw = ch * (sw / sh); }
   g.drawImage(shot, (shot.width - cw) / 2, (shot.height - ch) / 2, cw, ch, 560, 0, sw, sh);
-  const grd = g.createLinearGradient(560, 0, 760, 0); grd.addColorStop(0, '#0d1220'); grd.addColorStop(1, 'rgba(13,18,32,0)'); g.fillStyle = grd; g.fillRect(560, 0, 200, Hh);
-  g.fillStyle = '#dfe6f5'; g.font = '600 26px Outfit, sans-serif'; g.fillText('SET THE', 56, 92);
-  g.fillStyle = '#7fe3ff'; g.font = '800 64px Outfit, sans-serif'; g.fillText('MOOD', 52, 150);
+  const grd = g.createLinearGradient(560, 0, 760, 0); grd.addColorStop(0, '#EEE9D6'); grd.addColorStop(1, 'rgba(238,233,214,0)'); g.fillStyle = grd; g.fillRect(560, 0, 200, Hh);
+  g.fillStyle = '#1A1205'; g.font = 'italic 800 34px Newsreader, serif'; g.fillText('Playable', 56, 92);
+  g.fillStyle = '#2D7A4F'; g.font = '800 60px Montserrat, sans-serif'; g.fillText('SPACES', 52, 150);
   const { pct } = reading(), top = Object.entries(pct).sort((a, b) => b[1] - a[1])[0][0];
-  g.fillStyle = '#c7cee0'; g.font = '500 20px "DM Mono", monospace'; g.fillText(`${pct.cozy}% cozy · ${pct.bright}% bright · ${pct.moody}% moody · ${fmt(H)}`, 56, 196);
+  g.fillStyle = '#4A4030'; g.font = '500 20px Inter, sans-serif'; g.fillText(`${pct.cozy}% cozy · ${pct.bright}% bright · ${pct.moody}% moody · ${fmt(H)}`, 56, 196);
   SLOT_KEYS.forEach((k, i) => {
     const m = curMat(k), cx = 56 + (i % 3) * 150, cy = 250 + Math.floor(i / 3) * 230;
     g.save(); g.beginPath(); g.roundRect(cx, cy, 120, 120, 16); g.clip(); g.drawImage(thumb(m), cx, cy, 120, 120); g.restore();
-    g.fillStyle = '#8891ab'; g.font = '500 13px "DM Mono", monospace'; g.fillText(SLOTS[k].name.toUpperCase(), cx, cy + 148);
-    g.fillStyle = '#ffffff'; g.font = '600 19px Outfit, sans-serif'; g.fillText(m.name, cx, cy + 174);
+    g.fillStyle = '#7A6F58'; g.font = '700 12px Inter, sans-serif'; g.fillText(SLOTS[k].name.toUpperCase(), cx, cy + 148);
+    g.fillStyle = '#1A1205'; g.font = '600 19px Inter, sans-serif'; g.fillText(m.name, cx, cy + 174);
   });
   out.toBlob(b => { if (!b) return; const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = `moodboard-${top}.png`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); toast('Moodboard saved'); }, 'image/png');
 };
@@ -1186,6 +1189,7 @@ function afterChange(previews = true) {
 }
 addEventListener('resize', () => {
   camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix();
+  const wasHome = Math.abs(camGoal.dist - HOME.dist) < 0.5; HOME.dist = homeDist(); if (wasHome && !cine) camGoal.dist = HOME.dist;
   renderer.setSize(innerWidth, innerHeight); composer.setSize(innerWidth, innerHeight);
 });
 
