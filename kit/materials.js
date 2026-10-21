@@ -35,6 +35,10 @@ export const MATERIALS = [
 ];
 MATERIALS.forEach((m, i) => { m.i = i; });
 export const MAT = Object.fromEntries(MATERIALS.map(m => [m.id, m]));
+// a room can bring its own samples (a palette from the Wada colour book); they join the library marked room: true
+export function addMaterials(list) {
+  for (const m of list) { if (MAT[m.id]) continue; m.room = true; m.i = MATERIALS.length; MATERIALS.push(m); MAT[m.id] = m; }
+}
 export const CATS = ['wood', 'stone', 'fabric', 'paint'];
 export const CAT_NAME = { wood: 'Wood', stone: 'Stone', fabric: 'Fabric', paint: 'Paint' };
 

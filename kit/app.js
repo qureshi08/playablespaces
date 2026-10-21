@@ -8,7 +8,7 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { FullScreenQuad } from 'three/addons/postprocessing/Pass.js';
 
 import { initTextures, thumb } from './textures.js';
-import { MATERIALS, MAT, CATS, CAT_NAME, SLOT_KEYS, SLOTS, slotMats, slotState, setSlotNow, wipeSlot, peekSlot, unpeekSlot, tickSlots, shared } from './materials.js';
+import { MATERIALS, MAT, CATS, CAT_NAME, SLOT_KEYS, SLOTS, slotMats, slotState, setSlotNow, wipeSlot, peekSlot, unpeekSlot, tickSlots, shared, addMaterials } from './materials.js';
 import { buildRoom, R, obstacles, wallPlanes, glassLayers } from './shell.js';
 import { PIECES, PIECE_ORDER, GLOWS, GLOW_BASE, paintPrint, paintPair } from '../products/index.js';
 import { buildEnv, buildStudio, SKY } from './studio.js';
@@ -18,6 +18,10 @@ import { clamp, lerp, easeInOut, easeOut, $, $$ } from './util.js';
 // the room to build: /<id> (clean link) or ?room=<id> loads rooms/<id>/room.js, the studio flat by default
 const ROOM_ID = (new URLSearchParams(location.search).get('room') || location.pathname.split('/').filter(Boolean).find(p => !p.includes('.')) || 'studio').replace(/[^a-z0-9-]/g, '') || 'studio';
 const ROOM = (await import(`../rooms/${ROOM_ID}/room.js`)).default;
+if (ROOM.materials) addMaterials(ROOM.materials);
+// a room can limit the swatch tray to its own palette and the Furniture tab to its own pieces
+const TRAY_MATS = ROOM.onlyRoomMaterials ? MATERIALS.filter(m => m.room) : MATERIALS;
+const FURNITURE = ROOM.furniture || PIECE_ORDER;
 
 // ---------------------------------------------------------------------------------------------
 // renderer, scene, camera, post
@@ -609,14 +613,14 @@ function renderTray() {
   }
   itemsEl.innerHTML = '';
   if (tab === 'furniture') {
-    for (const type of PIECE_ORDER) {
+    for (const type of FURNITURE) {
       const b = document.createElement('button'); b.className = 'it fur'; b.dataset.type = type; b.title = PIECES[type].name + ' · drag it into the room';
       const cv = document.createElement('canvas'); cv.width = 176; cv.height = 132; furnitureThumb(type, cv);
       b.append(cv); b.insertAdjacentHTML('beforeend', `<span>${PIECES[type].name}</span>`);
       itemsEl.appendChild(b); bindDragSource(b, { kind: 'piece', type });
     }
   } else {
-    for (const m of MATERIALS.filter(m => m.cat === tab)) {
+    for (const m of TRAY_MATS.filter(m => m.cat === tab)) {
       const b = document.createElement('button'); b.className = 'it'; b.dataset.id = m.id; b.title = m.name + ' · drag it onto a surface';
       const cv = document.createElement('canvas'); cv.width = cv.height = 112; cv.getContext('2d').drawImage(thumb(m), 0, 0);
       b.append(cv); b.insertAdjacentHTML('beforeend', `<span>${m.name}</span>`);
@@ -625,7 +629,10 @@ function renderTray() {
     }
   }
 }
-for (const b of $$('#tabs [data-t]')) b.onclick = () => { tab = b.dataset.t; renderTray(); };
+for (const b of $$('#tabs [data-t]')) {
+  if (b.dataset.t !== 'furniture' && !TRAY_MATS.some(m => m.cat === b.dataset.t)) b.hidden = true;   // no samples of this kind in this room
+  b.onclick = () => { tab = b.dataset.t; renderTray(); };
+}
 $('#for button').onclick = () => selectSlot(null);
 function selectSlot(k) {
   if (selSlot) slotState[selSlot].hiT = 0;
@@ -1253,7 +1260,7 @@ composer.render(0.016);
 await say('Setting the daylight…');
 renderPreviews(); previewsDue = 0;
 await say('Unpacking the furniture…');
-for (const type of PIECE_ORDER) furnitureThumbCanvas(type);   // the Furniture tab opens instantly
+for (const type of FURNITURE) furnitureThumbCanvas(type);   // the Furniture tab opens instantly
 $('#loading').remove();
 previewsDue = performance.now() + 600;
 
