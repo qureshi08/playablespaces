@@ -2,7 +2,7 @@
 // Polished concrete floor, a glass wall onto a harbour city at the given time of day, a moodboard wall,
 // a work table with sample stacks, pendant lights and a few big potted trees.
 import * as THREE from 'three';
-import { R } from './room.js';
+import { R } from './shell.js';
 import { std, metal, glow, batch, rng, canvasTex } from './util.js';
 
 // uniforms of the sky backdrop, driven by daylight.js

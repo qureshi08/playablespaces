@@ -9,11 +9,15 @@ import { FullScreenQuad } from 'three/addons/postprocessing/Pass.js';
 
 import { initTextures, thumb } from './textures.js';
 import { MATERIALS, MAT, CATS, CAT_NAME, SLOT_KEYS, SLOTS, slotMats, slotState, setSlotNow, wipeSlot, peekSlot, unpeekSlot, tickSlots, shared } from './materials.js';
-import { buildRoom, R, obstacles, wallPlanes, glassLayers } from './room.js';
-import { PIECES, PIECE_ORDER, GLOWS, GLOW_BASE, paintPrint, paintPair } from './furniture.js';
+import { buildRoom, R, obstacles, wallPlanes, glassLayers } from './shell.js';
+import { PIECES, PIECE_ORDER, GLOWS, GLOW_BASE, paintPrint, paintPair } from '../products/index.js';
 import { buildEnv, buildStudio, SKY } from './studio.js';
 import { sample, sunAngles, moonAngles, dirFrom, isNight, bodyPos, sliderGradient, fmt, H_MIN, H_MAX, SUNRISE, SUNSET } from './daylight.js';
 import { clamp, lerp, easeInOut, easeOut, $, $$ } from './util.js';
+
+// the room to build: ?room=<id> loads rooms/<id>/room.js, the studio flat by default
+const ROOM_ID = (new URLSearchParams(location.search).get('room') || 'studio').replace(/[^a-z0-9-]/g, '') || 'studio';
+const ROOM = (await import(`../rooms/${ROOM_ID}/room.js`)).default;
 
 // ---------------------------------------------------------------------------------------------
 // renderer, scene, camera, post
@@ -34,7 +38,7 @@ initTextures(renderer);
 const scene = new THREE.Scene();
 scene.background = new THREE.Color('#10151f');
 scene.fog = new THREE.FogExp2('#1a2130', 0.0025);
-const camera = new THREE.PerspectiveCamera(30, innerWidth / innerHeight, 0.3, 400);
+const camera = new THREE.PerspectiveCamera(30, innerHeight ? innerWidth / innerHeight : 1, 0.3, 400);
 
 const env = buildEnv(renderer);
 scene.environment = env;
@@ -85,27 +89,16 @@ const overlays = [];
 // the flat and the studio
 // ---------------------------------------------------------------------------------------------
 buildStudio(scene);
-const flat = buildRoom(scene, env);
+const flat = buildRoom(scene, env, ROOM);
 const itemsRoot = new THREE.Group(); itemsRoot.name = 'items'; flat.root.add(itemsRoot);
 
 // ---------------------------------------------------------------------------------------------
 // state
 // ---------------------------------------------------------------------------------------------
-const MOODS = {
-  cozy: { name: 'Cozy', h: 18.4, mats: { floor: 'oak', wallL: 'limewash', wallB: 'limewash', slats: 'walnut', upholstery: 'boucle', accent: 'rust', bedding: 'linen', rug: 'knit', joinery: 'walnut' } },
-  bright: { name: 'Bright', h: 12.8, mats: { floor: 'whiteoak', wallL: 'chalk', wallB: 'chalk', slats: 'whiteoak', upholstery: 'linen', accent: 'navy', bedding: 'linen', rug: 'linen', joinery: 'whiteoak' } },
-  moody: { name: 'Moody', h: 22.2, mats: { floor: 'smoked', wallL: 'ink', wallB: 'ink', slats: 'walnut', upholstery: 'cognac', accent: 'ochre', bedding: 'charcoal', rug: 'heather', joinery: 'smoked' } },
-};
-// [type, x, z, rotation degrees] for floor pieces; [type, wall plane, along, height] for wall pieces
-const LAYOUT = [
-  ['rug', -3.4, -1.3, 90], ['sofa', -4.75, -1.6, 90], ['coffee', -3.3, -1.25, 0], ['armchair', -2.05, -1.0, -90], ['pouf', -2.6, -2.4, 0],
-  ['lamp', -4.95, 0.4, 180], ['side', -4.9, -3.35, 0], ['credenza', -3.45, -3.47, 0], ['plant', -2.0, -3.3, 0], ['plant2', -4.95, 0.98, 0],
-  ['dining', -3.6, 2.15, 0], ['chair', -4.0, 1.4, 0], ['chair', -3.2, 1.4, 0], ['chair', -4.0, 2.9, 180], ['chair', -3.2, 2.9, 180],
-  ['bed', 3.55, -2.6, 0], ['nightstand', 2.15, -3.47, 0], ['nightstand', 4.95, -3.47, 0], ['bench', 3.55, -1.2, 0], ['wardrobe', 1.82, -0.2, 90], ['snake', 5.0, 0.5, 0],
-  ['desk', 4.2, 1.35, 0], ['taskchair', 4.2, 2.05, 180], ['bookcase', 1.69, 3.1, 90], ['plant', 5.0, 3.3, 0],
-  ['shelf', 0, -3.45, 1.6], ['art', 3, -0.95, 1.55], ['frames', 2, 3.55, 1.55],
-];
-let H = 18.4, hTarget = 18.4, hAnim = null;
+const MOODS = ROOM.moods;
+$('#moods').innerHTML = Object.entries(MOODS).map(([k, m]) => `<button class="mood" data-m="${k}"><span class="pal"></span><b>${m.name}</b><small>${m.note}</small></button>`).join('');
+const LAYOUT = ROOM.layout;
+let H = MOODS[ROOM.start].h, hTarget = H, hAnim = null;
 const items = [];
 let nextId = 1;
 
@@ -324,17 +317,6 @@ function placeLayout(list) {
   }
   itemsChanged();
 }
-// wall pieces in LAYOUT name a plane by index into wallPlanes and a position along it
-function fixLayoutPlanes() {
-  // plane indices: 0 back wall left of the window, 1 back wall between window and partition, 2 back wall bedroom, 3 left wall, 4 slat wall
-  for (const row of LAYOUT) if (PIECES[row[0]].wall) {
-    if (row[0] === 'shelf') { row[1] = 0; row[2] = -3.45; }
-    if (row[0] === 'art') { row[1] = 3; row[2] = -0.95; }
-    if (row[0] === 'frames') { row[1] = 2; row[2] = 3.55; }
-  }
-}
-fixLayoutPlanes();
-
 // ---------------------------------------------------------------------------------------------
 // materials on slots, the print's colours, the moodboard
 // ---------------------------------------------------------------------------------------------
@@ -346,20 +328,11 @@ function repaintPrints() {
 }
 function anchorFor(slot) {
   // a world point on the slot's surface, used for wipes started from the UI and for annotation lines
-  const find = t => items.find(i => i.type === t);
-  const s = find('sofa'), b = find('bed'), r = find('rug');
-  switch (slot) {
-    case 'floor': return new THREE.Vector3(0.3, 0, 0.6);
-    case 'wallL': return new THREE.Vector3(R.X0 + 0.01, 1.7, 0.2);
-    case 'wallB': return new THREE.Vector3(-1.0 + 2.2, 1.9, R.Z0 + 0.01);
-    case 'slats': return new THREE.Vector3(R.X0 + 0.06, 1.7, -2.9);
-    case 'upholstery': return s ? s.g.localToWorld(new THREE.Vector3(-0.3, 0.5, 0.15)) : new THREE.Vector3(-4, 0.5, -1.5);
-    case 'accent': return s ? s.g.localToWorld(new THREE.Vector3(-0.9, 0.62, -0.05)) : new THREE.Vector3(-4, 0.6, -1.5);
-    case 'bedding': return b ? b.g.localToWorld(new THREE.Vector3(0, 0.55, 0.4)) : new THREE.Vector3(3.5, 0.5, -2.5);
-    case 'rug': return r ? r.g.localToWorld(new THREE.Vector3(0.6, 0.02, 0.5)) : new THREE.Vector3(-3, 0, -1);
-    case 'joinery': { const c = find('credenza') || find('dining'); return c ? c.g.localToWorld(new THREE.Vector3(0.4, 0.6, 0)) : new THREE.Vector3(-3.4, 0.6, -3.4); }
-  }
-  return new THREE.Vector3();
+  const a = ROOM.anchors[slot];
+  if (!a) return new THREE.Vector3();
+  if (Array.isArray(a)) return new THREE.Vector3(...a);
+  const it = a.piece.map(t => items.find(i => i.type === t)).find(Boolean);
+  return it ? it.g.localToWorld(new THREE.Vector3(...a.at)) : new THREE.Vector3(...a.or);
 }
 
 let now = 0;
@@ -405,9 +378,10 @@ function applyDaylight(h) {
 // ---------------------------------------------------------------------------------------------
 // camera: orbit around a target, pan, zoom, keys, cinematic mode
 // ---------------------------------------------------------------------------------------------
-const HOME = { target: new THREE.Vector3(0.2, -0.35, 0.3), yaw: 0.3, pitch: 0.54, dist: 27 };
+const CH = ROOM.camera.home, HOME = { target: new THREE.Vector3(...CH.target), yaw: CH.yaw, pitch: CH.pitch, dist: CH.dist };
 // on a tall phone screen the flat is wider than the view, so back the camera off until about 13.6 m fits across
-const homeDist = () => Math.max(27, 6.8 / (Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * camera.aspect));
+// (a tab that loads before it has a size has no aspect yet; fall back to the config distance instead of NaN)
+const homeDist = () => { const k = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * camera.aspect; return k > 0 && isFinite(k) ? Math.max(CH.dist, 6.8 / k) : CH.dist; };
 HOME.dist = homeDist();
 const cam = { target: HOME.target.clone(), yaw: HOME.yaw, pitch: HOME.pitch, dist: HOME.dist };
 const camGoal = { target: HOME.target.clone(), yaw: HOME.yaw, pitch: HOME.pitch, dist: HOME.dist };
@@ -420,14 +394,7 @@ function updateCamera(dt) {
 }
 function resetView() { camGoal.target.copy(HOME.target); camGoal.yaw = HOME.yaw; camGoal.pitch = HOME.pitch; camGoal.dist = HOME.dist; }
 
-const SHOTS = [
-  { t: [-3.4, 0.6, -1.4], yaw: 0.9, pitch: 0.32, dist: 8.5 },
-  { t: [3.5, 0.6, -2.2], yaw: -0.5, pitch: 0.42, dist: 8 },
-  { t: [-3.6, 0.7, 2.1], yaw: 1.6, pitch: 0.28, dist: 7.5 },
-  { t: [0, 0.3, 0], yaw: -0.6, pitch: 0.75, dist: 19 },
-  { t: [4.1, 0.7, 1.9], yaw: 0.2, pitch: 0.35, dist: 6.5 },
-  { t: [-1.5, 0.4, -0.6], yaw: 0.05, pitch: 0.5, dist: 13 },
-];
+const SHOTS = ROOM.camera.shots;
 let cine = false, cineT = 0, cineI = 0;
 function setCine(on) {
   cine = on; cineT = 0; cineI = 0;
@@ -484,7 +451,7 @@ function placeBodies() {
 // annotations: swatch cards floating over the room, with lines to the surfaces they describe
 // ---------------------------------------------------------------------------------------------
 let notesOn = true;
-const NOTE_SLOTS = [['upholstery', -3.6], ['slats', -1.75], ['wallB', 0.0], ['floor', 1.75], ['bedding', 3.65]];
+const NOTE_SLOTS = ROOM.notes.cards;
 const cardsEl = $('#cards'), svg = $('#notes-layer');
 const cards = NOTE_SLOTS.map(([slot, x]) => {
   const el = document.createElement('div'); el.className = 'ncard';
@@ -492,7 +459,7 @@ const cards = NOTE_SLOTS.map(([slot, x]) => {
   cardsEl.appendChild(el);
   const line = document.createElementNS('http://www.w3.org/2000/svg', 'line'), dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
   dot.setAttribute('r', '3.5'); svg.append(line, dot);
-  return { slot, el, line, dot, pos: new THREE.Vector3(x, 3.75, -4.2), shown: null };
+  return { slot, el, line, dot, pos: new THREE.Vector3(x, ROOM.notes.y, ROOM.notes.z), shown: null };
 });
 const projV = new THREE.Vector3();
 function toScreen(v) { projV.copy(v).project(camera); return [(projV.x * 0.5 + 0.5) * innerWidth, (-projV.y * 0.5 + 0.5) * innerHeight, projV.z]; }
@@ -1187,18 +1154,23 @@ function afterChange(previews = true) {
   updateMeter(); writeHash();
   if (previews) previewsDue = performance.now() + 700;
 }
-addEventListener('resize', () => {
+function onResize() {
+  if (!innerWidth || !innerHeight) return;
   camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix();
-  const wasHome = Math.abs(camGoal.dist - HOME.dist) < 0.5; HOME.dist = homeDist(); if (wasHome && !cine) camGoal.dist = HOME.dist;
+  const wasHome = !(Math.abs(camGoal.dist - HOME.dist) >= 0.5); HOME.dist = homeDist(); if (wasHome && !cine) camGoal.dist = HOME.dist;
+  if (!isFinite(cam.dist)) cam.dist = camGoal.dist;
   renderer.setSize(innerWidth, innerHeight); composer.setSize(innerWidth, innerHeight);
-});
+}
+addEventListener('resize', onResize);
+// a tab opened in the background can get its size without a resize event
+new ResizeObserver(onResize).observe(document.documentElement);
 
 // first state: from the link if there is one, otherwise the cozy room
-for (const k of SLOT_KEYS) setSlotNow(k, MAT[MOODS.cozy.mats[k]]);
+for (const k of SLOT_KEYS) setSlotNow(k, MAT[MOODS[ROOM.start].mats[k]]);
 placeLayout(LAYOUT);
 let fromLink = null;
 try { const m = location.hash.match(/r=([\w-]+)/); if (m) fromLink = JSON.parse(b64.dec(m[1])); } catch { fromLink = null; }
-if (fromLink && fromLink.m && fromLink.i) restore(fromLink, false); else setTime(MOODS.cozy.h);
+if (fromLink && fromLink.m && fromLink.i) restore(fromLink, false); else setTime(MOODS[ROOM.start].h);
 try { if (localStorage.getItem('mood-notes') === '0') setNotes(false); } catch {}
 applyDaylight(H);
 renderTray(); updateBoard(); updateMeter(); syncUndo();

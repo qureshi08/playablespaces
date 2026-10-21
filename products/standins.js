@@ -2,8 +2,8 @@
 // Rotation 0 means the piece faces +z (towards the open front of the flat).
 // userData.lights lists lamps it carries: [x, y, z, colour, intensity, distance, kind] in its own space.
 import * as THREE from 'three';
-import { slotMats, RUG_SIZE } from './materials.js';
-import { batch, std, gloss, metal, glow, rng, rbox, cushion, pillow, lathe, smoothGeo, leaf, aimLeaf, leafTint, LEAF_MAT, tint, BLACK_METAL, BRASS } from './util.js';
+import { slotMats, RUG_SIZE } from '../kit/materials.js';
+import { batch, std, gloss, metal, glow, rng, rbox, cushion, pillow, lathe, smoothGeo, leaf, aimLeaf, leafTint, LEAF_MAT, tint, BLACK_METAL, BRASS } from '../kit/util.js';
 
 const FAB = slotMats.upholstery, ACC = slotMats.accent, WOOD = slotMats.joinery, DUVET = slotMats.bedding;
 const SOIL = std('#2b231c');
