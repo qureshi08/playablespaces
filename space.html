@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Playable Spaces</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,500;1,6..72,700;1,6..72,800&family=Montserrat:ital,wght@0,700;0,800;1,800&family=Inter:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./style.css">
+<script type="importmap">
+{ "imports": { "three": "./vendor/three/build/three.module.js", "three/addons/": "./vendor/three/addons/" } }
+</script>
+</head>
+<body>
+<div id="app">
+  <main id="world" aria-label="A cutaway flat on a lit plinth in a studio. Drag samples, furniture and the sun into it."></main>
+  <div id="loading">Building the room…</div>
+  <div class="vignette"></div>
+  <svg id="notes-layer" aria-hidden="true"></svg>
+  <div id="cards" aria-hidden="true"></div>
+
+  <aside class="side">
+    <div class="brand">
+      <h1><a href="/" title="All spaces"><span>Playable</span> <b>spaces</b></a></h1>
+      <small>Drag wood, stone, fabric and paint onto the room, move the furniture around, and pull the sun across the sky.</small>
+    </div>
+    <div class="moods" id="moods" role="group" aria-label="Moods"></div>
+    <div class="meter" id="meter" title="How the room reads right now, from its materials and its light">
+      <div class="stat" data-k="cozy"><i>Cozy</i><b>0%</b><u><span></span></u></div>
+      <div class="stat" data-k="bright"><i>Bright</i><b>0%</b><u><span></span></u></div>
+      <div class="stat" data-k="moody"><i>Moody</i><b>0%</b><u><span></span></u></div>
+    </div>
+    <p class="why" id="why" aria-live="polite"></p>
+    <section class="card board" aria-label="Moodboard">
+      <div class="h">Moodboard <em>click a surface</em></div>
+      <div class="slots" id="slots"></div>
+    </section>
+  </aside>
+
+  <div class="tools">
+    <button id="undo" class="dsk" title="Undo (Ctrl+Z)" aria-label="Undo" disabled><svg viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg></button>
+    <button id="redo" class="dsk" title="Redo (Shift+Ctrl+Z)" aria-label="Redo" disabled><svg viewBox="0 0 24 24"><path d="m15 14 5-5-5-5"/><path d="M20 9H10a6 6 0 0 0 0 12h3"/></svg></button>
+    <span class="sep dsk"></span>
+    <button id="save" title="Save this moodboard as a picture" aria-label="Save moodboard"><svg viewBox="0 0 24 24"><path d="M12 4v11"/><path d="m7 10 5 5 5-5"/><path d="M5 20h14"/></svg></button>
+    <button id="link" title="Copy a link to this room" aria-label="Copy link"><svg viewBox="0 0 24 24"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg></button>
+    <button id="notes" aria-pressed="true" title="Hide annotations (Shift+N)" aria-label="Annotations"><svg viewBox="0 0 24 24"><g class="on"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="2.8"/></g><g class="off"><path d="M3 3l18 18"/><path d="M10.6 5.1A10 10 0 0 1 12 5c6.4 0 10 7 10 7a17 17 0 0 1-3 3.8M6.6 6.6C3.8 8.4 2 12 2 12s3.6 7 10 7a9.6 9.6 0 0 0 5.4-1.6"/></g></svg></button>
+    <button id="cine" aria-pressed="false" title="Cinematic cameras (C)" aria-label="Cinematic cameras"><svg viewBox="0 0 24 24"><rect x="3" y="7" width="13" height="10" rx="2"/><path d="m16 11 5-3v8l-5-3"/></svg></button>
+    <button id="how" title="How it works" aria-label="How it works"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.3a2.5 2.5 0 1 1 3.4 2.4c-.6.3-1 .8-1 1.5v.6"/><path d="M12 17.2h.01"/></svg></button>
+  </div>
+
+  <section class="card light" aria-label="Daylight">
+    <div class="h">Daylight <span class="clock" id="clock">18:24</span></div>
+    <div class="times" id="times">
+      <button class="time" data-h="7.6"><svg viewBox="0 0 24 24"><path d="M3 18h18"/><path d="M7 18a5 5 0 0 1 10 0"/><path d="M12 7v2M5.6 10.6l1.4 1.4M18.4 10.6 17 12M3 14h2M19 14h2"/></svg><span class="th"></span><div><b>Morning</b><small>07:36</small></div></button>
+      <button class="time" data-h="12.8"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg><span class="th"></span><div><b>Midday</b><small>12:48</small></div></button>
+      <button class="time" data-h="18.5"><svg viewBox="0 0 24 24"><path d="M9 3h6l2 6H7z"/><path d="M12 9v9"/><path d="M8 21h8"/></svg><span class="th"></span><div><b>Evening</b><small>18:30</small></div></button>
+      <button class="time" data-h="22.2"><svg viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg><span class="th"></span><div><b>Night</b><small>22:12</small></div></button>
+    </div>
+    <div class="tslide" id="tslide" role="slider" tabindex="0" aria-label="Time of day" aria-valuemin="5.5" aria-valuemax="23.5"><div class="tr"></div><div class="kn"></div></div>
+  </section>
+
+  <section class="card tray" id="tray" aria-label="Samples and furniture">
+    <div class="tmini"><span class="clock" id="clock2">18:24</span><div class="tslide" id="tslide2" role="slider" tabindex="0" aria-label="Time of day"><div class="tr"></div><div class="kn"></div></div></div>
+    <div class="tabs" id="tabs" role="tablist">
+      <button data-t="wood" role="tab">Wood</button><button data-t="stone" role="tab">Stone</button><button data-t="fabric" role="tab">Fabric</button><button data-t="paint" role="tab">Paint</button>
+      <span class="div"></span><button data-t="furniture" role="tab">Furniture</button>
+      <span class="for" id="for"><span></span><button aria-label="Show everything" title="Show everything">×</button></span>
+    </div>
+    <div class="items" id="items"></div>
+  </section>
+
+  <div id="sel" role="toolbar" aria-label="Selected piece"><div id="sel-card" hidden><div class="pc-meta"><strong id="pc-price"></strong><small id="pc-store"></small></div><div id="pc-sw" class="pc-sw"></div><a id="pc-buy" target="_blank" rel="noopener">Buy</a></div><div class="sel-row"><b id="sel-n">Sofa</b><button id="sel-rot" title="Turn (, .)"><svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.3-5.7"/><path d="M20 4v5h-5"/></svg>Turn</button><button id="sel-del" title="Take it out (Delete)"><svg viewBox="0 0 24 24"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M6 7l1 13h10l1-13"/></svg>Remove</button></div></div>
+  <div id="tip" aria-hidden="true"></div>
+  <div id="ui-hint" aria-hidden="true"></div>
+  <canvas id="ghost" width="176" height="132"></canvas>
+
+  <dialog id="info"><button id="close" aria-label="Close">×</button>
+    <h2>Play with the whole flat</h2>
+    <p>This is a flat cut open on a plinth, with a living room, a dining corner, a bedroom and a study. Every surface takes a new material, every piece of furniture moves, and the sun runs from morning to night. Change things and watch how the room <b>feels</b>.</p>
+    <h3>Samples</h3>
+    <p>Drag a sample from the tray onto a surface. Wood goes on the floor, the slat wall and the woodwork; stone on the floor and the walls; paint on the walls and the slats; fabric on the sofa and chairs, the cushions, the bed and the rugs. Hold it over a surface to see a patch of it in place, and let go to spread it. Or click a surface first, then a sample.</p>
+    <h3>Furniture</h3>
+    <p>Drag a piece from the Furniture tab into the room, or pick up anything already there. Pieces snap to a 10 cm grid and to the walls, and won't go through each other or the partitions. Scroll while holding one to turn it. Click a piece to turn it or take it out.</p>
+    <h3>Light</h3>
+    <p>Drag the sun along its arc, or use the Daylight slider. In the morning it comes in low through the dining window on the left. Around midday it sits behind the flat and pours through the big window. In the evening it comes in low and gold over the open side, and after dark the lamps take over. The four previews show your flat at four times of day.</p>
+    <h3>Cozy, bright or moody</h3>
+    <p>The meter reads the room as you change it. <b>Bright</b> comes from pale surfaces and daylight. <b>Cozy</b> comes from warm colours, soft textures and low gold light. <b>Moody</b> comes from dark, deep surfaces and pools of lamplight. Most rooms are a mix.</p>
+    <h3>Keys</h3>
+    <p><code>1</code> <code>2</code> <code>3</code> cozy, bright, moody · <code>[</code> <code>]</code> move the sun · <code>,</code> <code>.</code> turn the selected piece · <code>Delete</code> take it out · <code>Ctrl Z</code> undo · <code>C</code> cinematic cameras · <code>Shift N</code> hide the annotations · <code>R</code> reset the view · drag to orbit · right-drag to pan · scroll to zoom · <code>W</code><code>A</code><code>S</code><code>D</code> move · <code>Q</code> <code>E</code> turn.</p>
+  </dialog>
+</div>
+<script type="module" src="./kit/app.js"></script>
+</body>
+</html>

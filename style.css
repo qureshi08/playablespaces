@@ -58,6 +58,7 @@ button:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--green-
 .side > * { pointer-events: auto; }
 .brand { text-shadow: 0 2px 18px #000c; pointer-events: none !important; }
 .brand h1 { margin: 0; line-height: .9; }
+.brand h1 a { color: inherit; text-decoration: none; pointer-events: auto; }
 .brand h1 span { display: block; font: italic 800 24px var(--serif); color: var(--paper); letter-spacing: -.2px; }
 .brand h1 b { display: block; font: 800 38px var(--display); color: var(--green-lt); letter-spacing: -.5px; text-transform: uppercase; }
 .brand small { display: block; margin-top: 9px; font: 400 14px/1.45 var(--serif); color: #E6E0CC; max-width: 25em; }

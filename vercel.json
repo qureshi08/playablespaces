@@ -1,0 +1,5 @@
+{
+  "rewrites": [
+    { "source": "/:room([a-z0-9-]+)", "destination": "/space.html" }
+  ]
+}

@@ -15,8 +15,8 @@ import { buildEnv, buildStudio, SKY } from './studio.js';
 import { sample, sunAngles, moonAngles, dirFrom, isNight, bodyPos, sliderGradient, fmt, H_MIN, H_MAX, SUNRISE, SUNSET } from './daylight.js';
 import { clamp, lerp, easeInOut, easeOut, $, $$ } from './util.js';
 
-// the room to build: ?room=<id> loads rooms/<id>/room.js, the studio flat by default
-const ROOM_ID = (new URLSearchParams(location.search).get('room') || 'studio').replace(/[^a-z0-9-]/g, '') || 'studio';
+// the room to build: /<id> (clean link) or ?room=<id> loads rooms/<id>/room.js, the studio flat by default
+const ROOM_ID = (new URLSearchParams(location.search).get('room') || location.pathname.split('/').filter(Boolean).find(p => !p.includes('.')) || 'studio').replace(/[^a-z0-9-]/g, '') || 'studio';
 const ROOM = (await import(`../rooms/${ROOM_ID}/room.js`)).default;
 
 // ---------------------------------------------------------------------------------------------
