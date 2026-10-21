@@ -11,7 +11,7 @@ export default {
   id: 'habitt-billy-3-seater-sofa',
   name: 'Billy 3 seater Sofa',
   store: STORE, url: 'https://habitt.com/products/billy-3-seater-sofa-1', price: 'Rs 46,256', checked: CHECKED,
-  dims: { w: 69, d: 28, h: 34, unit: 'in' },
+  dims: { w: 69, d: 28, h: 34, unit: 'in' }, surface: 0.5,   // seat top, so cushions can sit on it
   parts: { upholstery: 'fabric', legs: 'wood' },
   variants: { upholstery: ['Grey', 'Red', 'Light Green', 'Off White'] },
   swatches: Object.fromEntries(Object.entries(JUTE).map(([k, c]) => [k, c[0]])),

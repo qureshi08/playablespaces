@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Habitt space proposal</title>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;1,6..72,800&family=Montserrat:wght@800&family=Inter:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root { --paper: #EEE9D6; --ink: #1A1205; --ink-2: #4A4030; --ink-3: #7A6F58; --green: #2D7A4F; --orange: #D94F00; --white: #FFFEFA; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: radial-gradient(ellipse at 50% 10%, #F7F5EC99, transparent 60%), var(--paper); color: var(--ink); font: 400 17px/1.55 Newsreader, Georgia, serif; }
+  main { max-width: 1100px; margin: 0 auto; padding: 40px 20px 60px; }
+  h1 { font: 800 clamp(30px, 5vw, 46px) Montserrat, sans-serif; margin: 0 0 6px; letter-spacing: -.5px; }
+  h1 i { font: italic 800 1em Newsreader, serif; color: var(--green); }
+  h2 { font: 800 22px Montserrat, sans-serif; margin: 44px 0 6px; }
+  .lede { color: var(--ink-2); max-width: 44em; margin: 0; }
+  .refs { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; margin-top: 16px; }
+  .ref { background: var(--white); border-radius: 14px; overflow: hidden; box-shadow: 0 18px 40px -26px #3a2c0f99; opacity: 0; transform: translateY(16px); animation: rise .7s cubic-bezier(.2, .8, .2, 1) forwards; }
+  .ref img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; display: block; }
+  .ref div { padding: 12px 14px 14px; }
+  .ref b { font: 700 13px Inter, sans-serif; letter-spacing: .6px; text-transform: uppercase; color: var(--green); }
+  .ref p { margin: 4px 0 6px; font-size: 16px; }
+  .ref a { font: 600 12px Inter, sans-serif; color: var(--ink-3); }
+  @keyframes rise { to { opacity: 1; transform: none; } }
+  .plan { background: var(--white); border-radius: 14px; padding: 16px; margin-top: 16px; box-shadow: 0 18px 40px -26px #3a2c0f99; }
+  .plan svg { width: 100%; height: auto; display: block; }
+  .plan svg .draw { stroke-dasharray: 1400; stroke-dashoffset: 1400; animation: draw 2.4s .3s ease forwards; }
+  @keyframes draw { to { stroke-dashoffset: 0; } }
+  .notes { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px 22px; margin-top: 12px; font-size: 16px; color: var(--ink-2); }
+  .notes b { color: var(--ink); }
+  .pals { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; margin-top: 16px; }
+  .pal { background: var(--white); border-radius: 14px; padding: 16px; box-shadow: 0 18px 40px -26px #3a2c0f99; }
+  .pal h3 { margin: 0; font: 800 20px Montserrat, sans-serif; }
+  .pal h3 span { font: 700 12px Inter, sans-serif; color: var(--ink-3); margin-left: 6px; }
+  .room { position: relative; height: 150px; border-radius: 10px; overflow: hidden; margin: 12px 0; }
+  .room .wall { position: absolute; inset: 0 0 42% 0; }
+  .room .floor { position: absolute; inset: 58% 0 0 0; }
+  .room .rug { position: absolute; left: 22%; right: 30%; bottom: 8%; height: 18%; border-radius: 3px; }
+  .room .frame { position: absolute; left: 66%; top: 10%; width: 5px; height: 72%; }
+  .room .frame2 { position: absolute; left: 66%; top: 10%; width: 26%; height: 5px; }
+  .room .sofa { position: absolute; left: 26%; bottom: 22%; width: 30%; height: 18%; border-radius: 6px 6px 3px 3px; background: #9d9c99; }
+  .room .cush { position: absolute; bottom: 33%; width: 6%; height: 9%; border-radius: 3px; }
+  .room .pot { position: absolute; left: 10%; bottom: 20%; width: 5%; height: 9%; border-radius: 0 0 4px 4px; }
+  .room .leaf { position: absolute; left: 7.5%; bottom: 29%; width: 10%; height: 24%; border-radius: 50% 50% 40% 40%; background: #4f6b3a; }
+  .room .base { position: absolute; left: 0; right: 0; bottom: 0; height: 6%; }
+  table { width: 100%; border-collapse: collapse; font: 500 13px Inter, sans-serif; }
+  td { padding: 4px 0; border-top: 1px solid #1A120512; vertical-align: middle; }
+  td:first-child { color: var(--ink-3); width: 46%; }
+  .sw { display: inline-block; width: 14px; height: 14px; border-radius: 4px; vertical-align: -2px; margin-right: 6px; box-shadow: inset 0 0 0 1px #1A120526; }
+  .pick { margin-top: 10px; font: 700 12px Inter, sans-serif; color: var(--green); }
+  .ask { margin-top: 40px; background: var(--ink); color: var(--paper); border-radius: 14px; padding: 18px 20px; font-size: 18px; }
+  .ask b { color: #44B977; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Habitt space, <i>take three</i></h1>
+  <p class="lede">A smaller, fuller flat built around Habitt's nine pieces. Every colour except the products' own comes from one Wada combination, including the floor, the frames, the plinth and the surroundings. Nothing is built until you pick.</p>
+
+  <h2>1. The references</h2>
+  <p class="lede">Real lived-in homes from Unsplash (Pinterest needs your login, Apartment Therapy now blocks automated reading). Each one gives one thing.</p>
+  <section class="refs" id="refs"></section>
+
+  <h2>2. The room</h2>
+  <div class="plan">
+    <svg viewBox="0 0 820 520" aria-label="Floor plan">
+      <defs><pattern id="g" width="20" height="20" patternUnits="userSpaceOnUse"><path d="M20 0H0V20" fill="none" stroke="#1A120510"/></pattern></defs>
+      <rect x="10" y="10" width="800" height="480" fill="url(#g)"/>
+      <!-- walls: 8.0 x 4.8 m at 100 px per metre; back wall on top, front low wall at the bottom -->
+      <path class="draw" d="M10 490 V10 H810 V490" fill="none" stroke="#1A1205" stroke-width="8"/>
+      <path d="M10 490 H330 M430 490 H810" stroke="#1A1205" stroke-width="3" stroke-dasharray="6 5"/>
+      <text x="380" y="512" text-anchor="middle" font-family="Inter" font-size="12" fill="#7A6F58">entrance</text>
+      <!-- windows on the back wall -->
+      <path d="M60 10 H230 M560 10 H760" stroke="#9ec5d6" stroke-width="10"/>
+      <!-- glass partition with black frame -->
+      <path d="M490 10 V370" stroke="#1A1205" stroke-width="5"/><path d="M490 10 V370" stroke="#cfe3ea" stroke-width="2" stroke-dasharray="2 22"/>
+      <g font-family="Inter" font-size="13" font-weight="600" fill="#1A1205">
+        <!-- kitchen run, left wall -->
+        <rect x="18" y="260" width="62" height="220" fill="#e7dfc8" stroke="#1A1205"/><text x="49" y="372" text-anchor="middle" transform="rotate(-90 49 372)">kitchen run</text>
+        <!-- dining -->
+        <rect x="140" y="95" width="79" height="119" fill="#d6a46c" stroke="#1A1205"/><text x="180" y="160" text-anchor="middle" font-size="11">Hendrick</text>
+        <rect x="100" y="110" width="40" height="40" fill="#222"/><rect x="100" y="160" width="40" height="40" fill="#222"/><rect x="219" y="110" width="40" height="40" fill="#222"/><rect x="219" y="160" width="40" height="40" fill="#222"/>
+        <text x="180" y="238" text-anchor="middle" font-size="11" fill="#7A6F58">4 Ease Stripe chairs</text>
+        <!-- OTTO + wall shelves -->
+        <rect x="18" y="40" width="34" height="60" fill="#d8b98c" stroke="#1A1205"/><text x="60" y="76" font-size="11">OTTO</text>
+        <!-- living -->
+        <rect x="290" y="250" width="180" height="150" rx="6" fill="#8f9a6a" opacity=".45"/>
+        <rect x="447" y="232" width="36" height="175" rx="5" fill="#9d9c99" stroke="#1A1205"/><text x="465" y="322" text-anchor="middle" transform="rotate(-90 465 322)" font-size="11">Billy sofa</text>
+        <rect x="360" y="270" width="61" height="122" fill="#8a5a34" stroke="#1A1205"/><text x="390" y="335" text-anchor="middle" font-size="11" fill="#fff">Kade</text>
+        <rect x="447" y="195" width="34" height="34" fill="#8a5a34"/><rect x="447" y="410" width="34" height="34" fill="#8a5a34"/>
+        <circle cx="464" cy="212" r="7" fill="#ffd58a"/><circle cx="464" cy="427" r="7" fill="#ffd58a"/>
+        <rect x="290" y="282" width="40" height="42" fill="#a3ad4a" stroke="#1A1205"/><rect x="290" y="340" width="40" height="42" fill="#a3ad4a" stroke="#1A1205"/>
+        <text x="300" y="420" font-size="11" fill="#7A6F58">2 Cane Charm</text>
+        <!-- bedroom -->
+        <rect x="565" y="12" width="188" height="200" fill="#ece3cf" stroke="#1A1205"/><rect x="565" y="12" width="188" height="12" fill="#5e3a1f"/><text x="659" y="120" text-anchor="middle">Marq bed</text>
+        <rect x="502" y="14" width="56" height="56" fill="#8a5a34"/><rect x="756" y="14" width="50" height="56" fill="#8a5a34"/>
+        <circle cx="530" cy="42" r="7" fill="#ffd58a"/><circle cx="781" cy="42" r="7" fill="#ffd58a"/>
+        <!-- desk -->
+        <rect x="764" y="380" width="44" height="66" fill="#1A1205"/><text x="752" y="416" text-anchor="end" font-size="11">TUBO desk</text>
+        <!-- plants -->
+        <g fill="#4f6b3a"><circle cx="270" cy="40" r="16"/><circle cx="540" cy="330" r="14"/><circle cx="790" cy="300" r="12"/><circle cx="110" cy="460" r="13"/><circle cx="420" cy="40" r="15"/></g>
+      </g>
+    </svg>
+    <div class="notes">
+      <div><b>8.0 × 4.8 m, 38 m².</b> Half the old floor, so nothing floats in space (the old one was 58 m²).</div>
+      <div><b>Bedroom behind a black framed glass partition</b>, the bed under its own window with a lamp each side (refs 29, 37).</div>
+      <div><b>Living packed together:</b> sofa backed to the glass with a side table and lamp at each end, Kade on the rug, two cane chairs facing (refs 13, 4).</div>
+      <div><b>Dining by the window</b>, a kitchen run along the left wall, shelves of plants and prints above the OTTO shelf (refs 3, 1).</div>
+      <div><b>Dressed like a home:</b> cushions and a throw on the sofa, books and a tray on Kade, plants in every corner, prints, curtains, a pendant over the table.</div>
+      <div><b>Work corner</b> in the bedroom by the right wall.</div>
+    </div>
+  </div>
+
+  <h2>3. Pick a palette</h2>
+  <p class="lede">Each card is one Wada combination applied to everything that is not a Habitt product. Strong colours only go on small things. I would use all three as the space's three moods, with your pick as the one it opens on.</p>
+  <section class="pals" id="pals"></section>
+
+  <div class="ask">Tell me <b>which palette</b> it opens on, and anything in the plan or references to change. Then I build it.</div>
+</main>
+<script>
+  const U = (id, w = 800) => `https://images.unsplash.com/photo-${id}?w=${w}&q=70&auto=format&fit=crop`;
+  const refs = [
+    { n: 29, src: null, href: 'https://unsplash.com/photos/living-room-with-sofa-and-partition-p_xTs-dajHk', take: 'Layout', p: 'The bedroom behind a black framed glass partition, the living room in front, one warm wood floor running through.' },
+    { n: 13, href: 'https://unsplash.com/photos/brown-wooden-round-table-near-white-sofa-SrioT6tdWII', take: 'Living styling', p: 'Grey sofa piled with cushions, a chunky wood table with books and a sculpture, a lamp on a table at each end.' },
+    { n: 4, href: 'https://unsplash.com/photos/a-living-room-filled-with-furniture-and-a-large-window-tCZEqwk0wQw', take: 'Lived-in density', p: 'A narrow room full of life: plants along the window, a throw over the chair, a rug, warm lamp light.' },
+    { n: 3, href: 'https://unsplash.com/photos/dining-table-with-chairs-in-kitchen-DqGYRl0LVQc', take: 'Dining', p: 'Black chairs mixed with cane round a plain wood table, next to a kitchen run.' },
+    { n: 37, href: 'https://unsplash.com/photos/blue-and-black-bicycle-near-green-plant-PK8BLaoAjIc', take: 'Bedroom', p: 'A low wood bed under the window, big plants either side, a woven pendant.' },
+    { n: 1, href: 'https://unsplash.com/photos/white-and-brown-table-lamp-on-brown-wooden-table-TDIdPmW2P9k', take: 'Walls', p: 'Wood shelves loaded with plants and prints above a low wood cabinet.' },
+  ];
+  const IMG = ["https://images.unsplash.com/photo-1786564026100-7ad7ae7654b2?fm=jpg&q=60&w=900&auto=format&fit=crop", "https://images.unsplash.com/photo-1600493505873-cddd69453072?fm=jpg&q=60&w=900&auto=format&fit=crop", "https://images.unsplash.com/photo-1676389317353-1d553659ea69?fm=jpg&q=60&w=900&auto=format&fit=crop", "https://images.unsplash.com/photo-1789381566177-d8878d6f9f59?fm=jpg&q=60&w=900&auto=format&fit=crop", "https://images.unsplash.com/photo-1585128833421-cb27e4911276?fm=jpg&q=60&w=900&auto=format&fit=crop", "https://images.unsplash.com/photo-1617201929478-8eedff7508f9?fm=jpg&q=60&w=900&auto=format&fit=crop"];
+  document.getElementById('refs').innerHTML = refs.map((r, i) => `<article class="ref" style="animation-delay:${i * 90}ms"><img src="${IMG[i]}" alt="Reference ${r.n}" loading="lazy"><div><b>${r.take}</b><p>${r.p}</p><a href="${r.href}" target="_blank" rel="noopener">Unsplash photo ${r.n}</a></div></article>`).join('');
+
+  const pals = [
+    { combo: 343, name: 'Aged oak and teal', cols: { 'Ivory Buff': '#ebd3a2', 'Deep Grayish Olive': '#635a3a', 'Burnt Sienna': '#ae5224', "Vandar Poel's Blue": '#064f6e' },
+      map: [['Walls, ceiling edge, curtains', 'Ivory Buff'], ['Floor (aged oak)', 'Deep Grayish Olive'], ['Partition frame, plinth, surroundings', "Vandar Poel's Blue"], ['Rug, cushions, throw, pots (small)', 'Burnt Sienna'], ['Bedding', 'Ivory Buff']],
+      why: 'Calm and warm. The muted olive floor sits under the walnut and grey sofa without fighting them; the teal frames echo the black metal.' },
+    { combo: 207, name: 'Sage, brick and black', cols: { 'Glaucous Green': '#b4cdc2', 'Sudan Brown': '#a36752', 'Black': '#111314' },
+      map: [['Walls, curtains, bedding', 'Glaucous Green'], ['Floor (warm wood)', 'Sudan Brown'], ['Partition frame, plinth, surroundings', 'Black'], ['Rug, cushions (small)', 'Sudan Brown']],
+      why: 'Fresh and graphic. Sage walls flatter the green cane chairs; black frames match Habitt\'s black metal pieces.' },
+    { combo: 296, name: 'Cream and walnut', cols: { 'Sulpher Yellow': '#f5ecc2', 'Ochraceous Salmon': '#d8a37b', 'Pale Raw Umber': '#71502f', 'Slate Color': '#34454c' },
+      map: [['Walls, curtains, bedding', 'Sulpher Yellow'], ['Floor (walnut)', 'Pale Raw Umber'], ['Partition frame, plinth, surroundings', 'Slate Color'], ['Rug, cushions, throw (small)', 'Ochraceous Salmon']],
+      why: 'Light and soft. Cream walls and a walnut floor, the most like the reference photos.' },
+  ];
+  document.getElementById('pals').innerHTML = pals.map(p => {
+    const c = n => p.cols[n];
+    const wall = c(p.map[0][1]), floor = c(p.map[1][1]), frame = c(p.map[2][1]), acc = c(p.map[3][1]);
+    return `<article class="pal"><h3>Wada #${p.combo}<span>${p.name}</span></h3>
+      <div class="room" style="background:${frame}"><div class="wall" style="background:${wall}"></div><div class="floor" style="background:${floor}"></div>
+      <div class="frame" style="background:${frame}"></div><div class="frame2" style="background:${frame}"></div><div class="rug" style="background:${acc}"></div>
+      <div class="sofa"></div><div class="cush" style="left:29%;background:${acc}"></div><div class="cush" style="left:47%;background:${wall}"></div>
+      <div class="leaf"></div><div class="pot" style="background:${acc}"></div><div class="base" style="background:${frame}"></div></div>
+      <table>${p.map.map(([where, n]) => `<tr><td>${where}</td><td><span class="sw" style="background:${c(n)}"></span>${n} ${c(n)}</td></tr>`).join('')}</table>
+      <p style="margin:10px 0 0;font-size:15px;color:#4A4030">${p.why}</p></article>`;
+  }).join('');
+</script>
+</body>
+</html>

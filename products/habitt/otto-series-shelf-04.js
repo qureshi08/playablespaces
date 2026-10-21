@@ -10,7 +10,7 @@ export default {
   id: 'habitt-otto-series-shelf-04',
   name: 'OTTO SERIES SHELF 04',
   store: STORE, url: 'https://habitt.com/products/otto-series-shelf-04', price: 'Rs 25,350', checked: CHECKED,
-  dims: { w: 23.6, d: 13.4, h: 39.3, unit: 'in' },
+  dims: { w: 23.6, d: 13.4, h: 39.3, unit: 'in' }, surface: IN(39.3),
   build() {
     const WOOD = LIGHT_OAK(), g = new THREE.Group(), b = batch(), t = 0.02;
     for (const [sx, sz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) b.box(BLACK_FRAME, sx * (W / 2 - t / 2), H / 2, sz * (D / 2 - t / 2), t, H, t);

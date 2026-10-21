@@ -21,6 +21,8 @@ const PAGES = std('#ffffff', { roughness: 0.75, vertexColors: true });
 const GLAZE = gloss('#ffffff', { roughness: 0.4, clearcoat: 0.5, vertexColors: true });
 const SPINES = ['#2c3a54', '#dad1c2', '#8b5b3b', '#4c5a49', '#bba37e', '#1e2125', '#a65038', '#6a7585', '#e5ded1', '#3b3029', '#7d6a4f'].map(c => tint(PAGES, c));
 const CERAMICS = ['#e8e3d9', '#c8b499', '#8d9985', '#2e3035', '#b76e4b'].map(c => tint(GLAZE, c));
+// plain (not vertex tinted) finishes for the pieces a book coloured room recolours
+const LAMP_BASE = gloss('#c8b499', { roughness: 0.4, clearcoat: 0.5 }), POT_ACCENT = gloss('#b76e4b', { roughness: 0.4, clearcoat: 0.5 });
 
 // ---- decor helpers ----------------------------------------------------------------------------
 function pottedSprig(b, x, y, z, s = 1, seed = 1, n = 8) {
@@ -55,7 +57,7 @@ function bookRow(b, x0, y, z, len, r, { stack = false, leaning = false } = {}) {
 }
 // ceramic table lamp with a drum shade; returns its light
 function drumLamp(group, b, x, y, z, s = 1) {
-  b.geo(CERAMICS[1], lathe([[0, 0], [0.07, 0], [0.11, 0.07], [0.105, 0.15], [0.05, 0.23], [0.02, 0.26], [0.02, 0.29], [0, 0.29]].map(([a, c]) => [a * s, c * s]), 28), x, y, z, { uv: 'keep' });
+  b.geo(LAMP_BASE, lathe([[0, 0], [0.07, 0], [0.11, 0.07], [0.105, 0.15], [0.05, 0.23], [0.02, 0.26], [0.02, 0.29], [0, 0.29]].map(([a, c]) => [a * s, c * s]), 28), x, y, z, { uv: 'keep' });
   b.cyl(BRASS, x, y + 0.33 * s, z, 0.006, 0.006, 0.08 * s, { seg: 8 });
   const shade = new THREE.Mesh(new THREE.CylinderGeometry(0.13 * s, 0.155 * s, 0.2 * s, 32, 1, true), LINEN_SHADE);
   shade.position.set(x, y + 0.43 * s, z); shade.castShadow = true; group.add(shade);
@@ -410,7 +412,7 @@ function deskChair() {
 }
 function snakePlant() {
   const g = new THREE.Group(), b = batch(), r = rng(33);
-  b.geo(CERAMICS[4], lathe([[0, 0], [0.12, 0], [0.15, 0.05], [0.165, 0.3], [0.17, 0.32], [0.16, 0.32], [0.15, 0.3]], 32), 0, 0, 0, { uv: 'keep' }).cyl(SOIL, 0, 0.285, 0, 0.152, 0.152, 0.012, { seg: 20 });
+  b.geo(POT_ACCENT, lathe([[0, 0], [0.12, 0], [0.15, 0.05], [0.165, 0.3], [0.17, 0.32], [0.16, 0.32], [0.15, 0.3]], 32), 0, 0, 0, { uv: 'keep' }).cyl(SOIL, 0, 0.285, 0, 0.152, 0.152, 0.012, { seg: 20 });
   for (let i = 0; i < 12; i++) {
     const a = i * 2.39996 + r(), lean = 0.08 + r() * 0.2, dir = new THREE.Vector3(Math.sin(a) * lean, 1, Math.cos(a) * lean).normalize(), len = 0.5 + r() * 0.4;
     b.geo(LEAF_MAT, aimLeaf(leaf(len, 0.07 + r() * 0.04, { shape: 'blade', fold: 0.12, curl: -0.02, seg: 10 }), new THREE.Vector3(Math.sin(a) * 0.05, 0.29, Math.cos(a) * 0.05), dir, a, leafTint(r).multiplyScalar(0.85)), 0, 0, 0, { uv: 'keep' });
@@ -446,3 +448,11 @@ export const PIECES = {
   tablelamp: { name: 'Table lamp', build: tableLamp, fp: [0.3, 0.3], h: 0.55, onTop: true },
 };
 export const PIECE_ORDER = ['sofa', 'armchair', 'coffee', 'pouf', 'side', 'lamp', 'credenza', 'rug', 'plant', 'plant2', 'snake', 'shelf', 'art', 'frames', 'bookcase', 'dining', 'chair', 'bed', 'nightstand', 'tablelamp', 'bench', 'wardrobe', 'desk', 'taskchair'];
+
+// the generic finishes a room in book colours repaints: light ones take its wall colour, dark ones its frames
+// colour, accent ones its accent colour (pots, lamp bases)
+export const PALETTE_TINTS = {
+  light: [gloss('#ece9e3', { roughness: 0.45, clearcoat: 0.4, flatShading: true }), std('#e8e3dc', { roughness: 0.3 }), LINEN_SHADE, std('#efeae1', { roughness: 0.9 })],
+  dark: [gloss('#3a3d43', { roughness: 0.5, clearcoat: 0.4 })],
+  accent: [POT_ACCENT, LAMP_BASE],
+};

@@ -10,10 +10,10 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 // filled from the room config by buildRoom(); K and TOP are the studio floor and the underside of the plinth slab
 export const R = { X0: 0, X1: 0, Z0: 0, Z1: 0, H: 2.75, K: -3.1, TOP: -0.42 };
 
-export const CAP = std('#d8d2c8', { roughness: 0.72 });
-const OUTER = std('#222731', { roughness: 0.7 });
-const POST = std('#2d333e', { roughness: 0.6, envMapIntensity: 0.7 });
-const SKIRT = std('#ece7df', { roughness: 0.55 });
+export let CAP = std('#d8d2c8', { roughness: 0.72 });
+let OUTER = std('#222731', { roughness: 0.7 });
+let POST = std('#2d333e', { roughness: 0.6, envMapIntensity: 0.7 });
+let SKIRT = std('#ece7df', { roughness: 0.55 });
 
 // glass: a faint additive reflection pane plus a very light tint
 export const glassLayers = [];
@@ -45,6 +45,7 @@ export function buildRoom(scene, env, cfg) {
   const shell = new THREE.Group(); root.add(shell);
   const walls = Object.fromEntries(S.walls.map(w => [w.side, w]));
   const tall = side => !!walls[side]?.tall;
+  if (S.bookColours) { CAP = SKIRT = slotMats.wallB; OUTER = POST = slotMats.slats; }
 
   // world position of a point on a wall: u runs along it, n is the distance in from its inner face
   const inner = { left: X0, right: X1, back: Z0, front: Z1 };
@@ -64,11 +65,12 @@ export function buildRoom(scene, env, cfg) {
     const b = batch();
     const ex0 = X0 - T - 0.5, ex1 = X1 + T + 0.45, ez0 = Z0 - T - 0.5, ez1 = Z1 + T + 0.45;
     const cx = (ex0 + ex1) / 2, cz = (ez0 + ez1) / 2, w = ex1 - ex0, d = ez1 - ez0;
-    b.box(POST, cx, (R.TOP - 0.05) / 2, cz, w, -0.05 - R.TOP, d, { r: 0.02 });
-    b.box(std('#c9c3b9', { roughness: 0.62 }), cx, -0.04, cz, w + 0.02, 0.03, d + 0.02, { r: 0.012 });
+    const book = S.bookColours, BODY = book ? slotMats.slats : metal('#23272e', { roughness: 0.42, metalness: 0.7 });
+    b.box(POST, cx, (R.TOP - 0.05) / 2, cz, w, -0.05 - R.TOP, d, book ? {} : { r: 0.02 });
+    b.box(book ? slotMats.wallB : std('#c9c3b9', { roughness: 0.62 }), cx, -0.04, cz, w + 0.02, 0.03, d + 0.02, book ? {} : { r: 0.012 });
     const inset = 0.34;
-    b.box(metal('#23272e', { roughness: 0.42, metalness: 0.7 }), cx, (R.K + R.TOP) / 2, cz, w - inset * 2, R.TOP - R.K, d - inset * 2, { r: 0.05 });
-    b.box(metal('#434a55', { roughness: 0.36 }), cx, R.K + 0.06, cz, w - inset * 2 + 0.16, 0.12, d - inset * 2 + 0.16, { r: 0.04 });
+    b.box(BODY, cx, (R.K + R.TOP) / 2, cz, w - inset * 2, R.TOP - R.K, d - inset * 2, book ? {} : { r: 0.05 });
+    b.box(book ? slotMats.slats : metal('#434a55', { roughness: 0.36 }), cx, R.K + 0.06, cz, w - inset * 2 + 0.16, 0.12, d - inset * 2 + 0.16, book ? {} : { r: 0.04 });
     b.flush(root);
     // warm LED lines under the slab and along the foot
     const led = glow('#ffb468', 3.4), led2 = glow('#ffae5c', 1.5);
@@ -82,7 +84,7 @@ export function buildRoom(scene, env, cfg) {
     // a name plate on the front of the plinth
     const text = cfg.plinth?.label ?? 'PLAYABLE SPACES';
     const drawPlate = (g, W, Hh) => {
-      g.clearRect(0, 0, W, Hh); g.fillStyle = '#c8b28f'; g.font = '800 140px Montserrat, sans-serif';
+      g.clearRect(0, 0, W, Hh); g.fillStyle = cfg.plinth?.color ?? '#c8b28f'; g.font = '800 140px Montserrat, sans-serif';
       g.textAlign = 'center'; g.textBaseline = 'middle'; g.globalAlpha = 0.85; g.fillText(text, W / 2, Hh / 2 + 6);
     };
     const label = canvasTex(2048, 256, drawPlate);
@@ -150,6 +152,22 @@ export function buildRoom(scene, env, cfg) {
   for (const p of P.list) {
     const SL = slotMats[p.slot || 'wallB']; matSlot.set(SL, p.slot || 'wallB');
     const alongZ = typeof p.x === 'number', c = alongZ ? p.x : p.z, [a0, a1] = alongZ ? p.z : p.x;
+    if (p.glass) {
+      // a full height steel and glass screen: posts about every 0.9 m, rails at the foot, at 0.95 m, at 2.1 m and at the top
+      const F = new Array(6).fill(SL), b = 0.035, segs = Math.max(1, Math.round((a1 - a0) / 0.9)), step = (a1 - a0) / segs;
+      const bar = (u0, u1, y0, y1) => (alongZ ? addBox(c - b / 2, c + b / 2, y0, y1, u0, u1, F) : addBox(u0, u1, y0, y1, c - b / 2, c + b / 2, F));
+      for (let i = 0; i <= segs; i++) { const u = a0 + i * step; bar(Math.max(a0, u - b / 2), Math.min(a1, u + b / 2), 0, H); }
+      for (const y of [0.04, 0.95, 2.1, H - 0.02]) bar(a0, a1, y - 0.02, y + 0.02);
+      for (let i = 0; i < segs; i++) {
+        const um = a0 + (i + 0.5) * step;
+        for (const [y0, y1] of [[0.06, 0.93], [0.97, 2.08], [2.12, H - 0.04]]) {
+          const [px, pz] = alongZ ? [c, um] : [um, c];
+          pane(shell, step - b, y1 - y0, px, (y0 + y1) / 2, pz, alongZ ? Math.PI / 2 : 0);
+        }
+      }
+      obstacles.push(alongZ ? [c - 0.03, a0, c + 0.03, a1] : [a0, c - 0.03, a1, c + 0.03]);
+      continue;
+    }
     const faces = [SL, SL, CAP, CAP, SL, SL];
     let cur = a0;
     for (const [d0, d1] of [...(p.doors || []), [a1, a1]]) {
@@ -260,7 +278,8 @@ export function buildRoom(scene, env, cfg) {
       for (let i = 0; i < 9000; i++) { const v = r(); g.fillStyle = `rgba(${v > 0.5 ? 60 : 210},${v > 0.5 ? 44 : 180},${v > 0.5 ? 28 : 130},${0.08 + r() * 0.1})`; g.fillRect(r() * w, r() * h, 1 + r() * 2, 3 + r() * 5); }
       g.strokeStyle = '#4f3f2e'; g.lineWidth = 14; g.strokeRect(10, 10, w - 20, h - 20);
     });
-    const mat = new THREE.Mesh(new THREE.BoxGeometry(1, 0.018, 0.62), std('#ffffff', { map: t, roughness: 0.95 }));
+    const mat = new THREE.Mesh(new THREE.BoxGeometry(1, 0.018, 0.62), new THREE.MeshStandardMaterial({ color: '#ffffff', map: t, roughness: 0.95, envMapIntensity: 0.5 }));
+    MAT_TINT.mat = mat.material;
     const [x, z] = at(w.side, (o.from + o.to) / 2, 0.42);
     mat.position.set(x, 0.009, z); if (ALONG_Z[w.side]) mat.rotation.y = Math.PI / 2;
     mat.receiveShadow = true; shell.add(mat);
@@ -278,7 +297,9 @@ function pane(parent, w, h, x, y, z, ry) {
   }
 }
 
-const SHEER = std('#f1ece2', { roughness: 0.9, transparent: true, opacity: 0.86, side: THREE.DoubleSide, envMapIntensity: 0.4 });
+// exported so a room in book colours can tint them with its walls and accents
+export const SHEER = std('#f1ece2', { roughness: 0.9, transparent: true, opacity: 0.86, side: THREE.DoubleSide, envMapIntensity: 0.4 });
+export const MAT_TINT = { mat: null };
 function curtain(parent, w, h, x, z, ry, folds = 9, phase = 1) {
   const g = new THREE.PlaneGeometry(w, h, 40, 1), p = g.attributes.position;
   for (let i = 0; i < p.count; i++) { const f = p.getX(i) / w + 0.5; p.setZ(i, Math.sin(f * Math.PI * folds + phase) * 0.028 * (0.6 + 0.4 * f)); }

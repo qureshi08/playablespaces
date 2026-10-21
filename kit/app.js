@@ -9,8 +9,8 @@ import { FullScreenQuad } from 'three/addons/postprocessing/Pass.js';
 
 import { initTextures, thumb } from './textures.js';
 import { MATERIALS, MAT, CATS, CAT_NAME, SLOT_KEYS, SLOTS, slotMats, slotState, setSlotNow, wipeSlot, peekSlot, unpeekSlot, tickSlots, shared, addMaterials } from './materials.js';
-import { buildRoom, R, obstacles, wallPlanes, glassLayers } from './shell.js';
-import { PIECES, PIECE_ORDER, GLOWS, GLOW_BASE, paintPrint, paintPair } from '../products/index.js';
+import { buildRoom, R, obstacles, wallPlanes, glassLayers, SHEER, MAT_TINT } from './shell.js';
+import { PIECES, PIECE_ORDER, GLOWS, GLOW_BASE, paintPrint, paintPair, PALETTE_TINTS } from '../products/index.js';
 import { buildEnv, buildStudio, SKY } from './studio.js';
 import { sample, sunAngles, moonAngles, dirFrom, isNight, bodyPos, sliderGradient, fmt, H_MIN, H_MAX, SUNRISE, SUNSET } from './daylight.js';
 import { clamp, lerp, easeInOut, easeOut, $, $$ } from './util.js';
@@ -19,6 +19,8 @@ import { clamp, lerp, easeInOut, easeOut, $, $$ } from './util.js';
 const ROOM_ID = (new URLSearchParams(location.search).get('room') || location.pathname.split('/').filter(Boolean).find(p => !p.includes('.')) || 'studio').replace(/[^a-z0-9-]/g, '') || 'studio';
 const ROOM = (await import(`../rooms/${ROOM_ID}/room.js`)).default;
 if (ROOM.materials) addMaterials(ROOM.materials);
+// a room can rename its slots (a frames slot instead of a slat wall)
+for (const [k, n] of Object.entries(ROOM.slotNames || {})) SLOTS[k].name = n;
 // a room can limit the swatch tray to its own palette and the Furniture tab to its own pieces
 const TRAY_MATS = ROOM.onlyRoomMaterials ? MATERIALS.filter(m => m.room) : MATERIALS;
 const FURNITURE = ROOM.furniture || PIECE_ORDER;
@@ -92,8 +94,12 @@ const overlays = [];
 // ---------------------------------------------------------------------------------------------
 // the flat and the studio
 // ---------------------------------------------------------------------------------------------
-buildStudio(scene);
+// the night city studio, unless the room sets itself in its own palette (the colour of its frames slot)
+const SETTING = ROOM.setting === 'palette';
+if (!SETTING) buildStudio(scene);
 const flat = buildRoom(scene, env, ROOM);
+const ground = SETTING ? new THREE.Mesh(new THREE.PlaneGeometry(400, 400), new THREE.MeshStandardMaterial({ color: '#000000', roughness: 0.95, envMapIntensity: 0.3 })) : null;
+if (ground) { ground.rotation.x = -Math.PI / 2; ground.position.y = R.K; ground.receiveShadow = true; scene.add(ground); }
 const itemsRoot = new THREE.Group(); itemsRoot.name = 'items'; flat.root.add(itemsRoot);
 
 // ---------------------------------------------------------------------------------------------
@@ -403,6 +409,7 @@ function applyDaylight(h) {
   const sa = sunAngles(h), phi = ((sa.az - 180 + 540) % 360) - 180;
   SKY.uSunPos.value.set(0.5 - phi / 172, 0.56 + sa.el / 160, night ? 0 : s.gk);
   scene.fog.color.copy(s.zen).lerp(new THREE.Color('#1a2130'), 0.75);
+  updateSetting();
   renderer.shadowMap.needsUpdate = true;
 }
 
@@ -410,9 +417,10 @@ function applyDaylight(h) {
 // camera: orbit around a target, pan, zoom, keys, cinematic mode
 // ---------------------------------------------------------------------------------------------
 const CH = ROOM.camera.home, HOME = { target: new THREE.Vector3(...CH.target), yaw: CH.yaw, pitch: CH.pitch, dist: CH.dist };
-// on a tall phone screen the flat is wider than the view, so back the camera off until about 13.6 m fits across
+// on a tall phone screen the flat is wider than the view, so back the camera off until the room plus a margin fits across
+const FIT = (ROOM.shell.x1 - ROOM.shell.x0) / 2 + 1.3;
 // (a tab that loads before it has a size has no aspect yet; fall back to the config distance instead of NaN)
-const homeDist = () => { const k = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * camera.aspect; return k > 0 && isFinite(k) ? Math.max(CH.dist, 6.8 / k) : CH.dist; };
+const homeDist = () => { const k = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * camera.aspect; return k > 0 && isFinite(k) ? Math.max(CH.dist, FIT / k) : CH.dist; };
 HOME.dist = homeDist();
 const cam = { target: HOME.target.clone(), yaw: HOME.yaw, pitch: HOME.pitch, dist: HOME.dist };
 const camGoal = { target: HOME.target.clone(), yaw: HOME.yaw, pitch: HOME.pitch, dist: HOME.dist };
@@ -1221,8 +1229,22 @@ function itemsChanged() {
   for (const it of items) if (PIECES[it.type].onTop && !(drag && drag.item === it)) applyPose(it);
   renderer.shadowMap.needsUpdate = true; syncLamps();
 }
+function updateSetting() {
+  if (!SETTING) return;
+  const _bg = new THREE.Color();
+  const k = isNight(H) ? 0.45 : 0.9;
+  _bg.set(curMat('slats').c[0]);
+  scene.background.copy(_bg).multiplyScalar(k);
+  scene.fog.color.copy(scene.background);
+  ground.material.color.copy(_bg).multiplyScalar(k * 0.8);
+  SHEER.color.set(curMat('wallB').c[0]);
+  for (const m of PALETTE_TINTS.light) m.color.set(curMat('wallB').c[0]);
+  for (const m of PALETTE_TINTS.dark) m.color.set(curMat('slats').c[0]);
+  for (const m of PALETTE_TINTS.accent) m.color.set(curMat('accent').c[0]);
+  if (MAT_TINT.mat) MAT_TINT.mat.color.set(curMat('accent').c[0]);
+}
 function afterChange(previews = true) {
-  updateMeter(); writeHash();
+  updateMeter(); writeHash(); updateSetting();
   if (previews) previewsDue = performance.now() + 700;
 }
 function onResize() {

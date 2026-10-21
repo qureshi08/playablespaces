@@ -27,3 +27,8 @@ export function addProduct(p) {
 // real products, in the order they were added (share links depend on it)
 import habitt from './habitt/index.js';
 for (const p of habitt) addProduct(p);
+
+// generic dressing, added after the real products so their share link numbers never move
+import dressing from './dressing.js';
+for (const [id, p] of Object.entries(dressing)) { PIECES[id] = p; PIECE_ORDER.push(id); }
+export { PALETTE_TINTS } from './standins.js';

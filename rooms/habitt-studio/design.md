@@ -1,50 +1,50 @@
-# Space 1 design: a one room flat for Habitt's pieces
+# Space 1 design, take three: a small, full flat for Habitt's pieces
 
-Written 2026-10-22 under the two locked design rules (references for the layout, Wada's *A Dictionary of Color Combinations* for every colour). Replaces the first version, which dropped the Habitt pieces into the old studio flat with invented colours.
+Approved by Anas on 2026-10-22 from `proposal.html` (references, plan and palettes shown before building). Replaces two rejected versions: the first dropped the pieces into the old studio flat, the second kept the same big box with nine pieces spread out ("feels so empty") and used the book only on the walls, floor and rug.
 
-## What the furniture asks for
+## Rules this follows
 
-Nine pieces: a grey jute sofa with black legs (Billy), green cane armchairs (Cane Charm), chunky walnut tone block tables (Kade coffee and side), a walnut platform bed with black metal posts (Marq), a beech mid century dining table (Hendrick) with black channelled faux leather chairs (Ease Stripe), a black ladder desk (TUBO) and a black metal and light oak shelf (OTTO). Together that is warm wood plus black metal plus one green: a calm small flat in the Japanese and mid century line, for one or two people. It wants one open room with soft separations rather than a flat cut into small rooms.
+1. The room itself is new: its own shape and size, sized to the furniture, packed and dressed like a lived in home.
+2. Every colour except the products' own comes from Wada's *A Dictionary of Color Combinations* (data: github.com/mattdesl/dictionary-of-colour-combinations): walls, floor, the glass partition frames, the plinth and the setting around it, curtains, wall caps and skirting, plant pots, lamp bases and shades, prints, rugs, bedding, cushions, the kitchen. Strong colours only on small things.
 
-## References (3) and what came from each
+## References (Unsplash, real homes) and what came from each
 
-1. **Akasaka apartment, FrontOfficeTokyo** (50 m², Dezeen): https://www.dezeen.com/2016/03/22/frontofficetokyo-architecture-tokyo-small-apartment-interior-single-room/
-   Taken: one long room with the windows along one long side; living and dining along the window wall; the sleeping area screened by a freestanding element instead of a full wall; pale timber floor, plain walls.
-2. **The Life concept apartment, I IN** (56 m², Dezeen): https://www.dezeen.com/2021/06/21/i-in-the-life-apartment-smarg-interior/
-   Taken: the order along the length (dining at one end, living in the centre, the bed at the far end); the bed hidden behind a low wooden piece that works as a "soft separation"; a dark wood feature wall against warm plaster walls.
-3. **Brooklyn rental loft one bedroom, Apartment Therapy** (850 sq ft, mid century): https://www.apartmenttherapy.com/chic-brooklyn-rental-loft-37546117
-   Taken: the sofa backed to the window wall on a rug with chairs facing it across a low table; dining as its own zone near the window with black framed chairs; a work corner tucked into the private end.
+Pinterest needs Anas's login; Apartment Therapy started blocking automated reading; Dezeen's homes were too bare for mass market furniture.
 
-Pinterest was tried first and needs a login, so the references come from the design sites the rule allows.
+1. https://unsplash.com/photos/living-room-with-sofa-and-partition-p_xTs-dajHk : the bedroom behind a black framed glass partition, living in front, one wood floor through.
+2. https://unsplash.com/photos/brown-wooden-round-table-near-white-sofa-SrioT6tdWII : the grey sofa piled with cushions, a chunky wood table with books, a lamp on a table at each end.
+3. https://unsplash.com/photos/a-living-room-filled-with-furniture-and-a-large-window-tCZEqwk0wQw : lived in density, plants by the window, a throw, a rug, warm lamp light.
+4. https://unsplash.com/photos/dining-table-with-chairs-in-kitchen-DqGYRl0LVQc : black chairs round a plain wood table next to a kitchen run.
+5. https://unsplash.com/photos/blue-and-black-bicycle-near-green-plant-PK8BLaoAjIc : a low wood bed under the window with big plants either side.
+6. https://unsplash.com/photos/white-and-brown-table-lamp-on-brown-wooden-table-TDIdPmW2P9k : walls with prints and plants above low furniture.
 
 ## The room
 
-- **Size:** 10.4 × 5.6 m (58 m²), close to the two Tokyo references.
-- **Tall walls:** back (the window wall) and left. Low walls: front and right, so the camera sees in.
-- **Windows** on the back wall: a dining window (x −4.5 to −2.7) and a wide living window (x −1.0 to 1.3) set above sofa height (sill 0.95 m). No window behind the bed, so the two prints can hang above it.
-- **Feature wall:** battens on the left wall from the back corner to z 1.2, the dark wood wall of reference 2.
-- **Soft separation:** a 1.1 m high divider at x 1.9 running from the back wall to z 0.7, finished like the battens, with the way into the bedroom at the front. This is the low walnut sideboard of reference 2 and the freestanding screen of reference 1.
-- **Entrance:** a door in the low front wall at x −1.6 to −0.6.
+- 8.2 × 4.8 m (39 m²), tall back and left walls, low front and right walls for the camera.
+- Windows: dining (x −3.5 to −1.85) and bedroom (x 1.65 to 3.4), both with curtains in the wall colour.
+- A full height steel and glass partition at x 0.9 from the back wall to z 1.2, frames in the Frames slot (the bookColours rule paints it, the plinth, the corner posts and the outer wall faces in the same colour).
+- No night city: the setting around the plinth takes the Frames colour, darker at night.
 
-## Where each piece goes
+## Where everything goes
 
-| Zone | Pieces | Why |
-|---|---|---|
-| Dining, left end by its window | Hendrick table, 4 Ease Stripe chairs, bird of paradise in the corner, OTTO shelf on the left wall | Reference 2 order, reference 3 dining zone by the window |
-| Living, centre | Billy sofa backed to the living window, Kade coffee table on the rug, two Cane Charm chairs facing the sofa, Kade side table with a lamp, arc lamp, fiddle fig | Reference 3 living arrangement |
-| Bedroom, right end behind the divider | Marq bed against the back wall, a Kade side table with a lamp on each side, two prints above | Reference 2 hidden bed |
-| Work corner, front right | TUBO workstation against the right wall with a desk chair, snake plant | Reference 3 work corner in the private end |
+| Zone | Pieces |
+|---|---|
+| Kitchen and dining, left | Kitchen run on the left wall; Hendrick table by the window with 4 Ease Stripe chairs; OTTO shelf with books and a bowl on top; a fiddle fig; a snake plant by the kitchen |
+| Living, centre | Billy sofa backed to the glass with cushions and a throw; a Kade side table and lamp at each end; Kade coffee table on the rug with books and a bowl; two Cane Charm chairs facing the sofa; an arc lamp; a bird of paradise in the corner |
+| Bedroom, behind the glass | Marq bed under its window; a Kade side table and lamp each side; a fiddle fig and a snake plant |
+| Work corner | TUBO workstation on the right wall with an Ease Stripe chair (a Habitt piece instead of the generic office chair, whose colours were invented) |
+| Walls | A print and a pair of prints on the back wall, a print on the left wall |
 
-## Colours (Wada, *A Dictionary of Color Combinations*)
+## Colours
 
-Data: github.com/mattdesl/dictionary-of-colour-combinations, `colors.json`. One combination per mood; the real products keep Habitt's colours.
+| Mood (button) | Combination | Walls, curtains, caps | Floor and kitchen | Frames, plinth, setting | Rug, cushions, pots | Bedding, throw |
+|---|---|---|---|---|---|---|
+| Cozy, opens on it (17:12) | **#343** | Ivory Buff #ebd3a2 | Deep Grayish Olive #635a3a | Vandar Poel's Blue #064f6e | Burnt Sienna #ae5224 | Ivory Buff #ebd3a2 |
+| Bright (12:48) | **#296** | Sulpher Yellow #f5ecc2 | Pale Raw Umber #71502f | Slate Color #34454c | Ochraceous Salmon #d8a37b | Sulpher Yellow #f5ecc2 |
+| Moody (22:12) | **#207** | Glaucous Green #b4cdc2 | Sudan Brown #a36752 | Black #111314 | Sudan Brown #a36752 | Glaucous Green #b4cdc2 |
 
-| Mood | Combination | Walls | Floor | Battens and divider | Rug | Bedding and soft pieces | Accents |
-|---|---|---|---|---|---|---|---|
-| Cozy (landing, 18:24) | **#243** | Ivory Buff #ebd3a2 | Raw Sienna #bb7125 | Slate Color #34454c | Olive Green #6b7140 | Ivory Buff #ebd3a2 | Raw Sienna #bb7125 |
-| Bright (12:48) | **#296** | Sulpher Yellow #f5ecc2 | Ochraceous Salmon #d8a37b | Pale Raw Umber #71502f | Slate Color #34454c | Sulpher Yellow #f5ecc2 | Ochraceous Salmon #d8a37b |
-| Moody (22:12) | **#192** | Deep Violet / Plumbeous #70727c | Vandyke Brown #4b3317 | Vandyke Brown #4b3317 | Cream Yellow #fdbf68 | Deep Violet / Plumbeous #70727c | Cream Yellow #fdbf68 |
+Cozy opens at 17:12 rather than 18:24: in the cooler dusk light the olive floor read blue grey; in late afternoon sun it reads as aged oak.
 
-Why these: #243 is the one combination that holds a light warm wall colour, a warm wood and an olive that answers the green cane chairs, plus a slate that sets off the walnut tone and black metal. #296 keeps the same family in daylight. #192 turns it dark with a warm cream glow.
+## Still generic, by design
 
-The swatch tray in this space offers only these Wada colours (the textures add grain and weave; the base colour is the book's).
+Leaves, soil and the arc lamp's brass and black metal are not recoloured. Everything visitors can buy keeps Habitt's real colours.
