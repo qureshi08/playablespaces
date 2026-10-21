@@ -10,7 +10,7 @@ export default {
   id: 'habitt-tubo-workstation',
   name: 'TUBO Workstation',
   store: STORE, url: 'https://habitt.com/products/tubo-workstation', price: 'Rs 26,775', checked: CHECKED,
-  dims: { w: 26, d: 18, h: 61, unit: 'in' },
+  dims: { w: 26, d: 18, h: 61, unit: 'in' }, surface: IN(30),
   build() {
     const WOOD = WALNUT_LAM(), g = new THREE.Group(), b = batch(), t = 0.022, back = -D / 2 + t / 2, foot = D / 2 - t / 2;
     // side frames: a back upright and a front rail leaning in to meet it at the top

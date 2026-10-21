@@ -119,10 +119,12 @@ function syncLamps() {
     p.color.set(l.color); p.distance = l.dist; p.intensity = l.base * lampLevel * 1.7;
   });
 }
-function spawn(type) {
-  const P = PIECES[type], g = P.build();
-  const item = { id: nextId++, type, g, x: 0, z: 0, rot: 0, plane: -1, a: 0, y: 0 };
-  g.userData.item = item;
+// the part of a real product a visitor can recolour (one per product for now), and its chosen colour
+const partOf = P => (P.variants ? Object.keys(P.variants)[0] : null);
+function buildPiece(item) {
+  const type = item.type, P = PIECES[type], part = partOf(P);
+  const g = P.build(part && item.v ? { [part]: item.v } : undefined);
+  item.g = g; g.userData.item = item;
   g.traverse(o => { if (o.isMesh) { o.castShadow = o.castShadow !== false; o.receiveShadow = true; o.userData.item = item; } });
   const ls = g.userData.lights || [];
   const use = type === 'shelf' ? [ls[1]] : ls;
@@ -132,8 +134,22 @@ function spawn(type) {
     lamps.push({ local: new THREE.Vector3(x, y, z), color: c, dist: d * 3.2, base, item, rank: { lamp: 0, flame: 1, led: 2 }[l[6]] ?? 3 });
   }
   itemsRoot.add(g);
+}
+function spawn(type, v = null) {
+  const item = { id: nextId++, type, g: null, x: 0, z: 0, rot: 0, plane: -1, a: 0, y: 0, v };
+  buildPiece(item);
   items.push(item);
   return item;
+}
+// rebuild a real product in another of the colours the store sells
+function setVariant(it, v) {
+  if (it.v === v) return;
+  pushUndo();
+  itemsRoot.remove(it.g);
+  for (let i = lamps.length - 1; i >= 0; i--) if (lamps[i].item === it) lamps.splice(i, 1);
+  it.g.traverse(o => { if (o.isMesh) o.geometry.dispose(); });
+  it.v = v; buildPiece(it); applyPose(it);
+  itemsChanged(); afterChange();
 }
 function remove(item) {
   itemsRoot.remove(item.g);
@@ -141,8 +157,19 @@ function remove(item) {
   items.splice(items.indexOf(item), 1);
   item.g.traverse(o => { if (o.isMesh) o.geometry.dispose(); });
 }
+function surfaceUnder(it) {
+  for (const o of items) {
+    const Q = PIECES[o.type];
+    if (o === it || !Q.surface || Q.wall) continue;
+    const c = Math.cos(o.rot), s = Math.sin(o.rot), dx = it.x - o.x, dz = it.z - o.z;
+    const lx = dx * c - dz * s, lz = dx * s + dz * c;
+    if (Math.abs(lx) <= Q.fp[0] / 2 && Math.abs(lz) <= Q.fp[1] / 2) return Q.surface;
+  }
+  return 0;
+}
 function applyPose(item) {
   const P = PIECES[item.type];
+  if (P.onTop) item.base = surfaceUnder(item);
   if (item.sw === undefined) initFloat(item);
   // resting pieces snap; lifted ones glide there in animateFloat
   if (!(item.lift > 0.0005) || item.splane !== item.plane) {
@@ -186,7 +213,7 @@ function poseFloat(it) {
     const out = 0.001 + it.lift * 0.6;
     if (wp.axis === 'z') { x = it.sx; z = wp.at + out; yaw = 0; } else { x = wp.at + out; z = it.sx; yaw = Math.PI / 2; }
     y = it.y + bob;
-  } else { x = it.sx; z = it.sz; y = (P.rug ? 0.001 : 0) + it.lift + bob; yaw = it.srot; }
+  } else { x = it.sx; z = it.sz; y = (P.rug ? 0.001 : 0) + (it.base || 0) + it.lift + bob; yaw = it.srot; }
   it.g.quaternion.setFromAxisAngle(_up, yaw).premultiply(_swq);
   it.g.position.set(x + _swp.x, y + S.hp + _swp.y, z + _swp.z);
 }
@@ -276,7 +303,7 @@ function fits(type, x, z, rot, self) {
     for (const o of obstacles) if (overlap(poly, rectPoly(o))) return false;
     for (const it of items) {
       if (it === self || PIECES[it.type].wall) continue;
-      if (P.rug || PIECES[it.type].rug) continue;
+      if (P.rug || PIECES[it.type].rug || P.onTop || PIECES[it.type].onTop) continue;
       for (const q of footprint(it.type, it.x, it.z, it.rot)) if (overlap(poly, q)) return false;
     }
   }
@@ -310,7 +337,7 @@ function placeLayout(list) {
   for (const row of list) {
     const [type] = row, P = PIECES[type];
     if (!P) continue;
-    const it = spawn(type);
+    const it = spawn(type, typeof row[4] === 'string' ? row[4] : null);
     if (P.wall) { it.plane = row[1]; it.a = row[2]; it.y = row[3]; }
     else { it.x = row[1]; it.z = row[2]; it.rot = row[3] * Math.PI / 180; }
     applyPose(it);
@@ -838,13 +865,43 @@ function selectItem(it) {
   if (it && it !== sel) { kick(it); it.liftV += 1.2; }   // a little pop and a swing, same as picking it up
   sel = it;
   selEl.classList.toggle('on', !!it);
-  if (it) $('#sel-n').textContent = PIECES[it.type].name;
+  if (it) { $('#sel-n').textContent = PIECES[it.type].name; fillCard(it); }
+}
+const fmtDate = d => new Date(d + 'T12:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+function fillCard(it) {
+  const P = PIECES[it.type], card = $('#sel-card');
+  selEl.classList.toggle('product', !!P.url);
+  card.hidden = !P.url;
+  if (!P.url) return;
+  $('#pc-price').textContent = P.price;
+  $('#pc-store').textContent = `${P.store} · price checked ${fmtDate(P.checked)}`;
+  const buy = $('#pc-buy');
+  buy.href = P.url + (P.url.includes('?') ? '&' : '?') + 'utm_source=playablespaces&utm_medium=space&utm_campaign=' + encodeURIComponent(ROOM_ID);
+  buy.textContent = 'Buy on ' + P.store;
+  const part = partOf(P), sw = $('#pc-sw');
+  sw.innerHTML = '';
+  if (!part) { sw.hidden = true; return; }
+  sw.hidden = false;
+  const cur = it.v || P.variants[part][0];
+  const label = document.createElement('span'); label.textContent = cur; sw.appendChild(label);
+  for (const v of P.variants[part]) {
+    const b = document.createElement('button');
+    b.className = 'dot' + (v === cur ? ' on' : ''); b.style.background = P.swatches?.[v] || '#999';
+    b.title = v; b.setAttribute('aria-label', v);
+    b.onclick = e => { e.stopPropagation(); setVariant(it, v); fillCard(it); toast(`${P.name} in ${v}`); };
+    sw.insertBefore(b, label);
+  }
 }
 function placeSelBar() {
   if (!sel) return;
   const P = PIECES[sel.type], top = sel.g.localToWorld(new THREE.Vector3(0, P.wall ? P.wall[1] / 2 + 0.1 : P.h + 0.15, 0));
   const [x, y] = toScreen(top);
-  selEl.style.left = x + 'px'; selEl.style.top = (y - 6) + 'px';
+  // keep the card on screen: clamp it sideways, and drop it below the piece when there is no room above
+  const w = selEl.offsetWidth, h = selEl.offsetHeight, m = 8;
+  const below = y - 6 - h < m;
+  const foot = below ? toScreen(sel.g.localToWorld(new THREE.Vector3(0, 0, 0)))[1] : 0;
+  selEl.style.left = clamp(x, w / 2 + m, innerWidth - w / 2 - m) + 'px';
+  selEl.style.top = (below ? Math.min(foot + 14 + h, innerHeight - m) : y - 6) + 'px';
 }
 function turn(it, dir) {
   const P = PIECES[it.type];
@@ -1043,7 +1100,11 @@ function snapshot() {
   return {
     m: SLOT_KEYS.map(k => curMat(k).id),
     h: Math.round(hTarget * 100) / 100,
-    i: items.map(it => PIECES[it.type].wall ? [TYPE_LIST.indexOf(it.type), 'w', it.plane, +it.a.toFixed(2), +it.y.toFixed(2)] : [TYPE_LIST.indexOf(it.type), +it.x.toFixed(2), +it.z.toFixed(2), Math.round(it.rot / (Math.PI / 4))]),
+    i: items.map(it => {
+      const row = PIECES[it.type].wall ? [TYPE_LIST.indexOf(it.type), 'w', it.plane, +it.a.toFixed(2), +it.y.toFixed(2)] : [TYPE_LIST.indexOf(it.type), +it.x.toFixed(2), +it.z.toFixed(2), Math.round(it.rot / (Math.PI / 4))];
+      if (it.v) row.push(it.v);
+      return row;
+    }),
   };
 }
 function restore(s, animate = true) {
@@ -1051,7 +1112,7 @@ function restore(s, animate = true) {
   for (const it of [...items]) remove(it);
   for (const row of s.i) {
     const type = TYPE_LIST[row[0]]; if (!type) continue;
-    const it = spawn(type);
+    const last = row[row.length - 1], it = spawn(type, row.length > (row[1] === 'w' ? 5 : 4) && typeof last === 'string' ? last : null);
     if (row[1] === 'w') { it.plane = row[2]; it.a = row[3]; it.y = row[4]; } else { it.x = row[1]; it.z = row[2]; it.rot = row[3] * Math.PI / 4; }
     applyPose(it);
   }
@@ -1149,7 +1210,10 @@ function tickKeys(dt) {
 // ---------------------------------------------------------------------------------------------
 // change bookkeeping and the loop
 // ---------------------------------------------------------------------------------------------
-function itemsChanged() { renderer.shadowMap.needsUpdate = true; syncLamps(); }
+function itemsChanged() {
+  for (const it of items) if (PIECES[it.type].onTop && !(drag && drag.item === it)) applyPose(it);
+  renderer.shadowMap.needsUpdate = true; syncLamps();
+}
 function afterChange(previews = true) {
   updateMeter(); writeHash();
   if (previews) previewsDue = performance.now() + 700;

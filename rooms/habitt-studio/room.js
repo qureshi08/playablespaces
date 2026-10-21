@@ -1,6 +1,6 @@
 // Space 1: the studio flat furnished with Habitt's real catalogue (products.md lists every piece and its source).
 // Same shell, moods and camera as the studio; the Habitt pieces replace the stand-ins. Lamps, plants, the rug,
-// the wardrobe, the bookcase and the wall pieces stay generic: they are styling, not for sale here.
+// the wardrobe, the bookcase, the table lamps and the wall pieces stay generic: they are styling, not for sale here.
 import studio from '../studio/room.js';
 
 export default {
@@ -14,7 +14,7 @@ export default {
     ['habitt-billy-3-seater-sofa', -4.92, -1.1, 90],
     ['habitt-kade-coffee-table', -3.75, -1.1, 90],
     ['habitt-cane-charm-armchair', -2.75, -1.65, -90], ['habitt-cane-charm-armchair', -2.75, -0.6, -90],
-    ['habitt-kade-side-table', -4.93, -2.62, 0],
+    ['habitt-kade-side-table', -4.93, -2.62, 0], ['tablelamp', -4.98, -2.72, 0],
     ['lamp', -4.95, 0.25, 180], ['plant2', -4.95, 0.8, 0], ['plant', -2.0, -3.3, 0],
     ['habitt-otto-series-shelf-04', -4.65, -3.52, 0],
     // dining
@@ -24,6 +24,7 @@ export default {
     // bedroom
     ['habitt-marq-king-size-bed', 3.45, -2.68, 0],
     ['habitt-kade-side-table', 2.2, -3.39, 0], ['habitt-kade-side-table', 4.99, -3.39, 0],
+    ['tablelamp', 2.2, -3.45, 0], ['tablelamp', 4.99, -3.45, 0],
     ['wardrobe', 1.82, -0.2, 90], ['snake', 5.0, 0.5, 0],
     // study
     ['habitt-tubo-workstation', 4.2, 1.25, 0], ['taskchair', 4.2, 1.85, 180],

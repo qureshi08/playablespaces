@@ -23,7 +23,7 @@ export const kadeCoffee = {
   id: 'habitt-kade-coffee-table',
   name: 'Kade Coffee Table',
   store: STORE, url: 'https://habitt.com/products/kade-coffee-table', price: 'Rs 8,900', checked: CHECKED,
-  dims: { w: 48, d: 24, h: 15.2, unit: 'in' },
+  dims: { w: 48, d: 24, h: 15.2, unit: 'in' }, surface: IN(15.2),
   build: () => kade(IN(48), IN(24), IN(15.2)),
 };
 
@@ -31,6 +31,6 @@ export const kadeSide = {
   id: 'habitt-kade-side-table',
   name: 'Kade Side Table',
   store: STORE, url: 'https://habitt.com/products/kade-side-table', price: 'Rs 6,700', checked: CHECKED,
-  dims: { w: 24, d: 24, h: 15.2, unit: 'in' },
+  dims: { w: 24, d: 24, h: 15.2, unit: 'in' }, surface: IN(15.2),
   build: () => kade(IN(24), IN(24), IN(15.2)),
 };

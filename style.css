@@ -161,11 +161,28 @@ button:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--green-
 
 #sel { position: absolute; z-index: 6; display: flex; gap: 3px; padding: 4px; border-radius: 13px; background: var(--glass); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); box-shadow: var(--shadow); transform: translate(-50%, -100%); opacity: 0; pointer-events: none; transition: opacity .15s; left: 0; top: 0; }
 #sel.on { opacity: 1; pointer-events: auto; }
+#sel { flex-direction: column; }
+.sel-row { display: flex; gap: 3px; }
+/* the product card: price, the colours the store sells, and the way to buy it */
+#sel-card { padding: 7px 7px 6px; margin-bottom: 3px; border-bottom: 1px solid var(--line); display: flex; flex-direction: column; gap: 7px; min-width: 210px; }
+#sel-card[hidden] { display: none; }
+.pc-meta { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.pc-meta strong { font: 700 15px var(--ui); color: var(--ink); font-variant-numeric: tabular-nums; }
+.pc-meta small { font: italic 500 12px var(--serif); color: var(--ink-3); white-space: nowrap; }
+.pc-sw { display: flex; align-items: center; gap: 6px; }
+.pc-sw[hidden] { display: none; }
+.pc-sw span { font: 600 11.5px var(--ui); color: var(--ink-2); margin-left: 3px; }
+.pc-sw .dot { width: 20px; height: 20px; border-radius: 50%; box-shadow: inset 0 0 0 1px #1A120526, 0 2px 5px -2px #0a070266; transition: transform .2s var(--spring); }
+.pc-sw .dot:hover { transform: scale(1.12); }
+.pc-sw .dot.on { box-shadow: 0 0 0 2px var(--paper-hi), 0 0 0 4px var(--green); }
+#pc-buy { display: block; text-align: center; padding: 8px 10px; border-radius: 10px; background: var(--green); color: var(--white); font: 700 12.5px var(--ui); text-decoration: none; box-shadow: 0 6px 14px -8px #2D7A4Fcc; transition: background .15s; }
+#pc-buy:hover { background: var(--green-dk); }
+#pc-buy::after { content: " ↗"; }
 #sel button { height: 28px; padding: 0 9px; border-radius: 9px; display: flex; align-items: center; gap: 5px; font: 600 12px var(--ui); color: var(--ink-2); }
 #sel button:hover { background: #1A12050f; color: var(--ink); }
 #sel #sel-del:hover { background: #D94F0017; color: var(--orange); }
 #sel svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-#sel b { font: 700 12px var(--ui); padding: 0 8px 0 9px; display: flex; align-items: center; color: var(--paper); background: var(--green); border-radius: 9px; }
+#sel .sel-row b { font: 700 12px var(--ui); padding: 0 8px 0 9px; display: flex; align-items: center; color: var(--paper); background: var(--green); border-radius: 9px; }
 
 #ui-hint { position: absolute; left: 50%; top: 22px; transform: translateX(-50%); z-index: 6; font: 600 12px var(--ui); color: var(--ink); background: var(--glass); border-radius: 14px; padding: 7px 14px; white-space: nowrap; opacity: 0; transition: opacity .4s; pointer-events: none; box-shadow: var(--shadow); }
 #ui-hint.on { opacity: 1; }

@@ -360,6 +360,11 @@ function nightstand() {
   const lamp = drumLamp(g, b, -0.08, H, -0.04, 0.85);
   b.flush(g); g.userData.lights = [lamp]; return g;
 }
+function tableLamp() {
+  const g = new THREE.Group(), b = batch();
+  const lamp = drumLamp(g, b, 0, 0, 0, 0.9);
+  b.flush(g); g.userData.lights = [lamp]; return g;
+}
 function wardrobe() {
   const g = new THREE.Group(), b = batch(), W = 1.6, D = 0.6, H = 2.15;
   const lacquer = std('#d8d3ca', { roughness: 0.45, envMapIntensity: 0.7 });
@@ -438,5 +443,6 @@ export const PIECES = {
   desk: { name: 'Desk', build: desk, fp: [1.4, 0.65], h: 1.1 },
   taskchair: { name: 'Desk chair', build: deskChair, fp: [0.6, 0.6], h: 1 },
   snake: { name: 'Snake plant', build: snakePlant, fp: [0.36, 0.36], h: 1.2 },
+  tablelamp: { name: 'Table lamp', build: tableLamp, fp: [0.3, 0.3], h: 0.55, onTop: true },
 };
-export const PIECE_ORDER = ['sofa', 'armchair', 'coffee', 'pouf', 'side', 'lamp', 'credenza', 'rug', 'plant', 'plant2', 'snake', 'shelf', 'art', 'frames', 'bookcase', 'dining', 'chair', 'bed', 'nightstand', 'bench', 'wardrobe', 'desk', 'taskchair'];
+export const PIECE_ORDER = ['sofa', 'armchair', 'coffee', 'pouf', 'side', 'lamp', 'credenza', 'rug', 'plant', 'plant2', 'snake', 'shelf', 'art', 'frames', 'bookcase', 'dining', 'chair', 'bed', 'nightstand', 'tablelamp', 'bench', 'wardrobe', 'desk', 'taskchair'];

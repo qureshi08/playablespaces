@@ -3,7 +3,7 @@
 // three loose back cushions, square tapered black legs.
 import * as THREE from 'three';
 import { batch, rbox, cushion, smoothGeo } from '../../kit/util.js';
-import { IN, STORE, CHECKED, jute, BLACK_WOOD } from './common.js';
+import { IN, STORE, CHECKED, jute, JUTE, BLACK_WOOD } from './common.js';
 
 const W = IN(69), D = IN(28), H = IN(34);
 
@@ -14,6 +14,7 @@ export default {
   dims: { w: 69, d: 28, h: 34, unit: 'in' },
   parts: { upholstery: 'fabric', legs: 'wood' },
   variants: { upholstery: ['Grey', 'Red', 'Light Green', 'Off White'] },
+  swatches: Object.fromEntries(Object.entries(JUTE).map(([k, c]) => [k, c[0]])),
   build(v = {}) {
     const FAB = jute(v.upholstery || 'Grey'), g = new THREE.Group(), b = batch();
     const leg = 0.17, arm = 0.14, armTop = 0.61, deck = 0.39, back = IN(11);

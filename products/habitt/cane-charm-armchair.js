@@ -16,6 +16,7 @@ export default {
   dims: { w: 22, d: 16.5, h: 32.5, unit: 'in' },
   parts: { frame: 'plastic' },
   variants: { frame: ['green', 'black', 'white'] },
+  swatches: FRAME,
   build(v = {}) {
     const P = std(FRAME[v.frame || 'green'], { roughness: 0.45, envMapIntensity: 0.7 }), CANE = caneMat();
     const g = new THREE.Group(), b = batch();

@@ -70,7 +70,7 @@
     <div class="items" id="items"></div>
   </section>
 
-  <div id="sel" role="toolbar" aria-label="Selected piece"><b id="sel-n">Sofa</b><button id="sel-rot" title="Turn (, .)"><svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.3-5.7"/><path d="M20 4v5h-5"/></svg>Turn</button><button id="sel-del" title="Take it out (Delete)"><svg viewBox="0 0 24 24"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M6 7l1 13h10l1-13"/></svg>Remove</button></div>
+  <div id="sel" role="toolbar" aria-label="Selected piece"><div id="sel-card" hidden><div class="pc-meta"><strong id="pc-price"></strong><small id="pc-store"></small></div><div id="pc-sw" class="pc-sw"></div><a id="pc-buy" target="_blank" rel="noopener">Buy</a></div><div class="sel-row"><b id="sel-n">Sofa</b><button id="sel-rot" title="Turn (, .)"><svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.3-5.7"/><path d="M20 4v5h-5"/></svg>Turn</button><button id="sel-del" title="Take it out (Delete)"><svg viewBox="0 0 24 24"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M6 7l1 13h10l1-13"/></svg>Remove</button></div></div>
   <div id="tip" aria-hidden="true"></div>
   <div id="ui-hint" aria-hidden="true"></div>
   <canvas id="ghost" width="176" height="132"></canvas>
