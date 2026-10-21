@@ -7,3 +7,5 @@ kit/reel.js
 kit/reel-preview.html
 tools/
 _reels/
+rooms/*/reel-research.md
+rooms/*/reel-script.json
