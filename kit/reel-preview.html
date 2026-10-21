@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reel preview</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #1A1205; }
+  body { display: grid; place-items: center; overflow: hidden; }
+  #frame { width: 432px; height: 768px; border: 0; transform-origin: center; border-radius: 6px; box-shadow: 0 20px 60px #0008; }
+</style>
+</head>
+<body>
+<!-- the reel at its real 9:16 layout (432 x 768 CSS px = 1080 x 1920 at 2.5x), scaled to fit this window -->
+<iframe id="frame" allow="autoplay"></iframe>
+<script>
+  const room = new URLSearchParams(location.search).get('room') || 'habitt-studio';
+  const f = document.getElementById('frame');
+  f.src = '/' + room + '?reel';
+  const fit = () => { f.style.transform = `scale(${Math.min(innerWidth / 460, innerHeight / 800)})`; };
+  addEventListener('resize', fit); fit();
+</script>
+</body>
+</html>

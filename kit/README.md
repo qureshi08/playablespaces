@@ -59,6 +59,10 @@ Check a new product alone on `kit/turntable.html?id=<id>&yaw=30&pitch=8` (add `&
 
 `addProduct` turns `dims` into the footprint and height the kit uses for snapping and collisions. Product ids are appended to `PIECE_ORDER`, which share links also depend on, so ids are never removed or reordered.
 
+## Promo reels
+
+`kit/reel.js` is the reel script (camera path, captions, touch marks, events and sounds), written for the Habitt space; copy it per space and change the pieces, keys and captions. Watch it at `kit/reel-preview.html?room=<id>` (tap to play, 9:16). Record with `node tools/record-reel.mjs <id>` while `node serve.js` runs: 1080 x 1920 at 30 fps to `_reels/<id>/final.mp4`; `--stills 1,4.5,9` renders stills only. All of it stays off Vercel.
+
 ## Rules
 
 0. **Design rules, locked:** every space colour comes from Wada's *A Dictionary of Color Combinations* (data: mattdesl/dictionary-of-colour-combinations `colors.json`), with the combination number noted in the config; and every space is designed around its products from 3 to 5 real interior references recorded in `rooms/<id>/design.md`, never by reusing another room. Full text in `House Walkthrough/INTERIOR_SPACES.md`.

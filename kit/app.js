@@ -31,7 +31,8 @@ const FURNITURE = ROOM.furniture || PIECE_ORDER;
 const world = $('#world'), app = $('#app');
 const renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: 'high-performance', stencil: false });
 // capped pixel ratio: sharp enough on a laptop screen without rendering 4x the pixels
-const PR = clamp(Math.min(devicePixelRatio, 1.5, Math.sqrt(2.2e6 / (innerWidth * innerHeight))), 1, 1.5);
+// (the reel recorder renders at the full device ratio, so a 432 x 768 page at 2.5x fills a 1080 x 1920 frame)
+const PR = new URLSearchParams(location.search).has('reel') ? clamp(devicePixelRatio, 1, 3) : clamp(Math.min(devicePixelRatio, 1.5, Math.sqrt(2.2e6 / (innerWidth * innerHeight))), 1, 1.5);
 renderer.setPixelRatio(PR);
 renderer.setSize(innerWidth, innerHeight);
 renderer.shadowMap.enabled = true;
@@ -1318,9 +1319,10 @@ for (const t of ['pointermove', 'pointerdown', 'pointerup', 'wheel', 'keydown', 
 const camMoving = () => cam.target.distanceToSquared(camGoal.target) > 1e-6 || Math.abs(cam.yaw - camGoal.yaw) > 1e-4 || Math.abs(cam.pitch - camGoal.pitch) > 1e-4 || Math.abs(cam.dist - camGoal.dist) > 1e-3;
 const clock = new THREE.Clock();
 const perf = { n: 0, work: 0, pick: 0, gap: 0, last: 0 };
-renderer.setAnimationLoop(() => {
+renderer.setAnimationLoop(() => frame(Math.min(clock.getDelta(), 0.05)));
+// one step of the room: the live loop calls it with real time, the reel recorder with a fixed step (force renders every call)
+function frame(dt, force = false) {
   const f0 = performance.now(); if (perf.last) perf.gap = Math.max(perf.gap, f0 - perf.last); perf.last = f0;
-  const dt = Math.min(clock.getDelta(), 0.05);
   now += dt; shared.time.value = now;
   if (hAnim) {
     hAnim.t = Math.min(1, hAnim.t + dt / 1.3); H = lerp(hAnim.from, hAnim.to, easeInOut(hAnim.t)); applyDaylight(H);
@@ -1332,7 +1334,7 @@ renderer.setAnimationLoop(() => {
   if (drag && drag.item) syncLamps();
   const floating = animateFloat(dt);
   const active = floating || hAnim || wiping || keys.size || cine || drag || press || camMoving() || renderer.shadowMap.needsUpdate || previewQueue.length > 0 || (previewsDue && performance.now() > previewsDue);
-  if (active) request(2);
+  if (active || force) request(2);
   if (wake <= 0) return;
   wake--;
   tickKeys(dt); tickCine(dt); updateCamera(dt);
@@ -1342,7 +1344,16 @@ renderer.setAnimationLoop(() => {
   composer.render(dt);
   updateCards(); placeSelBar();
   perf.n++; perf.work += performance.now() - f0;
-});
+}
+
+// dev: ?reel plays the promo reel script for this room (kit/reel.js, kept off the live site)
+if (new URLSearchParams(location.search).has('reel')) {
+  renderer.setAnimationLoop(null);
+  const api = { frame, items, PIECES, MOODS, MAT, SLOT_KEYS, R, cam, camGoal, HOME, camera, selectItem, setVariant, applyPose, kick, curMat,
+    wipe: (k, id) => { wipeSlot(k, MAT[id], new THREE.Vector3(0, 0.5, R.Z1), now); boardDirty = true; },
+    setTime: h => { hAnim = null; H = hTarget = h; applyDaylight(H); }, toScreen, getNow: () => now };
+  import('./reel.js').then(m => m.start(api));
+}
 
 // exposed for debugging in the console
 window.__mood = { perf, animateFloat, scene, camera, items, setTime, applyMood, snapshot, cam, camGoal, renderer, composer, applyDaylight, updateCamera, renderPreviews };
