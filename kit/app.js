@@ -352,6 +352,15 @@ function placeLayout(list) {
     else { it.x = row[1]; it.z = row[2]; it.rot = row[3] * Math.PI / 180; }
     applyPose(it);
   }
+  // a layout obeys the same physics as dragging: report any piece that overlaps a wall or another piece
+  window.__overlaps = [];
+  for (const it of items) {
+    const P = PIECES[it.type];
+    if (P.wall || P.rug || P.onTop || fits(it.type, it.x, it.z, it.rot, it)) continue;
+    const hit = items.filter(o => o !== it && !PIECES[o.type].wall && !PIECES[o.type].rug && !PIECES[o.type].onTop && footprint(it.type, it.x, it.z, it.rot).some(p => footprint(o.type, o.x, o.z, o.rot).some(q => overlap(p, q)))).map(o => o.type);
+    window.__overlaps.push(`${it.type} at ${it.x}, ${it.z} overlaps ${hit.join(', ') || 'a wall'}`);
+  }
+  if (window.__overlaps.length) console.warn('layout overlaps:\n' + window.__overlaps.join('\n'));
   itemsChanged();
 }
 // ---------------------------------------------------------------------------------------------

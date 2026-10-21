@@ -79,30 +79,32 @@ export default {
     moody: { name: 'Moody', note: 'Wada #207', h: 22.2, mats: { floor: 'w207-sudan', wallL: 'w207-glaucous', wallB: 'w207-glaucous', slats: 'w207-black', upholstery: 'w207-glaucous-linen', accent: 'w207-sudan-wool', bedding: 'w207-glaucous-linen', rug: 'w207-sudan-knit', joinery: 'w207-sudan' } },
   },
 
-  // [product, x, z, rotation degrees] on the floor; [product, hang plane index, along, height] on a wall
+  // [product, x, z, rotation degrees] on the floor; [product, hang plane index, along, height] on a wall.
+  // Circulation: a clear strip at least 1.05 m deep runs along the front (z 1.3 to 2.4) from the entrance to the
+  // kitchen and into the bedroom gap (z 1.2 to 2.4); every zone keeps the usual clearances (sofa to coffee table
+  // about 0.4 m, chairs pulled back from tables, 0.6 m or more beside the bed). Nothing overlaps (checked on load).
   layout: [
     // kitchen and dining, by the left window
     ['kitchen', -3.79, 1.2, 90],
     ['habitt-otto-series-shelf-04', -3.92, -1.85, 90], ['tabledecor', -3.92, -1.85, 90],
-    ['habitt-hendrick-dining-table', -2.305, -1.35, 90],
-    ['habitt-ease-stripe-dining-chair', -2.95, -1.65, 90], ['habitt-ease-stripe-dining-chair', -2.95, -1.05, 90],
-    ['habitt-ease-stripe-dining-chair', -1.66, -1.65, -90], ['habitt-ease-stripe-dining-chair', -1.66, -1.05, -90],
-    ['plant', -1.4, -2.05, 0], ['snake', -3.1, 2.1, 0],
-    // living, packed round the sofa against the glass
-    ['rug', -0.35, 0.75, 90],
-    ['habitt-billy-3-seater-sofa', 0.485, 0.695, -90], ['sofadress', 0.6, 0.695, -90],
-    ['habitt-kade-side-table', 0.535, -0.51, 0], ['tablelamp', 0.55, -0.55, 0],
-    ['habitt-kade-side-table', 0.535, 1.9, 0], ['tablelamp', 0.55, 1.95, 0],
-    ['habitt-kade-coffee-table', -0.45, 0.75, 90], ['tabledecor', -0.45, 0.62, 90],
-    ['habitt-cane-charm-armchair', -1.1, 0.4, 90], ['habitt-cane-charm-armchair', -1.1, 1.1, 90],
-    ['lamp', -1.65, 2.0, 90], ['plant2', 0.5, -2.0, 0],
+    ['habitt-hendrick-dining-table', -2.6, -1.75, 0],
+    ['habitt-ease-stripe-dining-chair', -2.9, -1.0, 180], ['habitt-ease-stripe-dining-chair', -2.3, -1.0, 180],
+    ['habitt-ease-stripe-dining-chair', -3.43, -1.75, 90], ['habitt-ease-stripe-dining-chair', -1.77, -1.75, -90],
+    ['plant', -1.15, -2.12, 0], ['plant2', -0.45, -2.12, 0],
+    // living, round the sofa against the glass
+    ['rug', -0.5, -0.6, 90],
+    ['habitt-billy-3-seater-sofa', 0.485, -0.6, -90], ['sofadress', 0.6, -0.6, -90],
+    ['habitt-kade-side-table', 0.535, -1.8, 0], ['tablelamp', 0.55, -1.85, 0],
+    ['lamp', 0.62, 0.68, -90],
+    ['habitt-kade-coffee-table', -0.62, -0.6, 90], ['tabledecor', -0.62, -0.75, 90],
+    ['habitt-cane-charm-armchair', -1.5, -1.0, 90], ['habitt-cane-charm-armchair', -1.5, -0.15, 90],
     // bedroom behind the glass
-    ['habitt-marq-king-size-bed', 2.52, -1.39, 0],
+    ['habitt-marq-king-size-bed', 2.52, -1.38, 0],
     ['habitt-kade-side-table', 1.27, -2.085, 0], ['tablelamp', 1.27, -2.12, 0],
     ['habitt-kade-side-table', 3.79, -2.085, 0], ['tablelamp', 3.79, -2.12, 0],
-    ['plant', 1.3, 0.85, 0], ['snake', 3.85, 0.35, 0],
+    ['plant', 3.85, -0.12, 0],
     // work corner
-    ['habitt-tubo-workstation', 3.86, 1.63, -90], ['habitt-ease-stripe-dining-chair', 3.3, 1.63, 90],
+    ['habitt-tubo-workstation', 3.86, 1.63, -90], ['habitt-ease-stripe-dining-chair', 3.3, 1.63, 90], ['snake', 3.88, 0.92, 0],
     // walls
     ['art', 0, -1.05, 1.55], ['frames', 0, 0.3, 1.55], ['art', 1, -0.9, 1.7],
   ],
