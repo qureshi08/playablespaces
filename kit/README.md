@@ -55,6 +55,8 @@ Check a new product alone on `kit/turntable.html?id=<id>&yaw=30&pitch=8` (add `&
 
 ## Rules
 
+0. **Design rules, locked:** every space colour comes from Wada's *A Dictionary of Color Combinations* (data: mattdesl/dictionary-of-colour-combinations `colors.json`), with the combination number noted in the config; and every space is designed around its products from 3 to 5 real interior references recorded in `rooms/<id>/design.md`, never by reusing another room. Full text in `House Walkthrough/INTERIOR_SPACES.md`.
+
 1. A new space touches only `rooms/<id>/` and any new `products/` files.
 2. Check every new space on a desktop and at 375 px wide before it ships.
 3. UI stays in the locked brand (`style.css`); never copy another site's UI.
