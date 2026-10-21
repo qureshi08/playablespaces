@@ -60,7 +60,7 @@ export function buildRoom(scene, env) {
     // a name plate on the front of the plinth
     const label = canvasTex(2048, 256, (g, W, Hh) => {
       g.clearRect(0, 0, W, Hh); g.fillStyle = '#c8b28f'; g.font = '700 150px Outfit, sans-serif';
-      g.textAlign = 'center'; g.textBaseline = 'middle'; g.globalAlpha = 0.85; g.fillText('PLAYABLE ROOM', W / 2, Hh / 2 + 6);
+      g.textAlign = 'center'; g.textBaseline = 'middle'; g.globalAlpha = 0.85; g.fillText('PLAYABLE SPACES', W / 2, Hh / 2 + 6);
     });
     const plate = new THREE.Mesh(new THREE.PlaneGeometry(4.2, 0.52), new THREE.MeshStandardMaterial({ map: label, transparent: true, roughness: 0.5, metalness: 0.4, emissive: '#3a2a14', emissiveMap: label, emissiveIntensity: 0.6 }));
     plate.position.set(-1.6, -1.05, ez1 - inset + 0.004); plate.rotation.x = 0; root.add(plate);

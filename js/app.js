@@ -1,4 +1,4 @@
-// Playable Room: the app. Renderer and post chain, the flat and its furniture, interaction, UI.
+// Playable Spaces: the app. Renderer and post chain, the flat and its furniture, interaction, UI.
 import * as THREE from 'three';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
