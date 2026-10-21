@@ -33,24 +33,29 @@ export async function start(A) {
   const P = it => A.PIECES[it.type];
   const find = (type, z) => A.items.find(it => it.type === type && (z === undefined || Math.abs(it.z - z) < 0.05));
   const sofa = find('habitt-billy-3-seater-sofa'), bed = find('habitt-marq-king-size-bed'), table = find('habitt-hendrick-dining-table');
-  const hoppers = ['habitt-cane-charm-armchair', 'habitt-kade-coffee-table', 'habitt-kade-side-table', 'tablelamp', 'tabledecor', 'sofadress', 'lamp']
-    .flatMap(ty => A.items.filter(it => it.type === ty && it.x < 0.9));
   const WD = A.HOME.dist;
   const price = it => +(P(it).price || '').replace(/[^\d]/g, '') || 0;
 
   // ---- shots: one continuous camera move each, meeting in hard cuts on the voice ----
-  // [start, hour(u, t), from [target, yaw, pitch, dist], to [...]]
-  const tLights = W(0, 'furniture') - 0.1;
-  const c2 = L(1).start - 0.15, c3 = L(2).start - 0.2, c4 = L(3).start - 0.2, c5 = L(4).start - 0.2, c6 = L(5).start - 0.2, c6b = W(5, 'every') - 0.12, c7 = L(6).start - 0.2;
+  // the story (researched 2026-10-22, playablespaces/_reels/<room>/research.md): you are furnishing your first home,
+  // every piece costs real money and a delivered sofa is one you live with, so you try it here first, then buy it.
+  // [start, hour(u, t), from [target, yaw, pitch, dist], to [...]]; medium and wide shots, never tight on a cushion
+  const DAY = 15.4, EVE = 21.3;
+  const tSofa = W(1, 'sofa'), tDeliv = W(1, 'delivered'), tTry = W(2, 'try'), tMove = W(3, 'move'), tGreen = W(3, 'green');
+  const tSee = W(3, 'see'), tNight = W(3, 'night'), tHome = L(4).start, tTap = W(4, 'tap'), tBuy = W(4, 'buy');
+  const c2 = L(1).start - 0.15, c2b = W(1, 'but') - 0.12, c3 = L(2).start - 0.15, c4 = tMove - 0.18, c5 = W(3, 'try') - 0.15, c6 = W(3, 'and') - 0.12, c7 = tHome - 0.15, c8 = tTap - 0.3, c9 = L(5).start - 0.2;
+  const SOFA_TO = { x: -1.0, z: 0.85, rot: 0 };
   const SHOTS = [
-    [OFF, (u, t) => 16.4 + 2.2 * easeIO((t - tLights) / 0.9), [[0, 1.3, 0.4], 0, 0.66, WD * 0.98], [[0, 1.1, 0.35], 0, 0.62, WD * 0.84]],   // the empty flat fills, symmetric, pushing in (framed low, under the ticker)
-    [c2, () => 18.6, [[-0.7, 0.45, -0.5], 0.3, 0.52, 8.6], [[-0.7, 0.45, -0.5], 0.55, 0.5, 7.6]],                                            // everything hops: it is playable
-    [c3, () => 17.6, [[0.3, 0.85, -0.55], -0.82, 0.34, 5.8], [[0.3, 0.85, -0.5], -1.0, 0.36, 5.3]],                                           // the sofa, picked up and moved
-    [c4, () => 17.6, [[0.15, 0.85, -0.55], -1.15, 0.38, 5.0], [[0.15, 0.85, -0.55], -1.32, 0.36, 4.7]],                                       // green, then red
-    [c5, (u, t) => 12.6 + 9.6 * easeIO((t - W(4, 'day')) / (W(4, 'night') + 0.35 - W(4, 'day'))), [[0, -0.3, 0.1], 0.45, 0.62, WD * 0.95], [[0, -0.3, 0.1], 0.18, 0.6, WD * 0.88]],   // noon to night
-    [c6, () => 18.4, [[-2.6, 1.0, -1.6], 0.3, 0.46, 6.4], [[-2.6, 1.0, -1.6], 0.5, 0.44, 5.9]],                                              // the dining table and its price
-    [c6b, () => 18.4, [[2.5, 1.1, -1.3], -0.35, 0.46, 6.8], [[2.5, 1.1, -1.3], -0.12, 0.44, 6.3]],                                            // the bed, and its buy button
-    [c7, () => 18.2, [[0, -0.3, 0.1], 0.3, 0.62, WD * 1.06], [[0, -0.3, 0.1], 0.05, 0.6, WD * 0.95]],                                       // the whole flat at dusk, the ask
+    [OFF, () => 16.6, [[0, 1.3, 0.4], 0, 0.66, WD * 0.98], [[0, 1.1, 0.35], 0, 0.62, WD * 0.86]],                     // the empty home fills, symmetric, pushing in
+    [c2, () => DAY, [[0.35, 0.75, -0.6], -0.42, 0.34, 8.4], [[0.35, 0.75, -0.6], -0.6, 0.36, 7.8]],                   // the grey sofa and its card, like the photo online
+    [c2b, () => 18.4, [[-0.5, 0.45, -0.45], 0.22, 0.5, 9.4], [[-0.5, 0.45, -0.45], 0.4, 0.48, 8.5]],                  // delivered: it drops in, and you live with it
+    [c3, () => DAY, [[0.1, 0.6, -0.4], -0.4, 0.44, 9.8], [[0.1, 0.6, -0.4], -0.55, 0.44, 9.0]],                       // try it here first: a tap lifts it
+    [c4, () => DAY, [[-0.3, 0.0, 0.1], 0.0, 0.86, 16.5], [[-0.3, 0.0, 0.1], 0.12, 0.82, 15.5]],                      // wide from above: it travels across the room
+    [c5, () => DAY, [[-1.0, 0.75, 0.85], -0.22, 0.38, 8.8], [[-1.0, 0.75, 0.85], -0.04, 0.38, 8.2]],                  // it turns green
+    [c6, (u, t) => DAY + (EVE + 0.6 - DAY) * easeIO((t - tSee) / (tNight + 0.45 - tSee)), [[-0.6, 0.35, 0.2], 0.38, 0.56, 10.5], [[-0.6, 0.35, 0.2], 0.2, 0.54, 9.6]],   // day to night
+    [c7, () => EVE + 0.6, [[-0.7, 0.55, 0.1], -0.38, 0.42, 9.0], [[-0.7, 0.55, 0.1], -0.6, 0.4, 8.2]],                  // feels like home: lamps on
+    [c8, () => EVE + 0.6, [[-1.0, 0.8, 0.85], 0.22, 0.4, 8.8], [[-1.0, 0.8, 0.85], 0.05, 0.4, 8.2]],                 // the real price, and buy
+    [c9, () => EVE + 0.4, [[0, -0.3, 0.1], 0.3, 0.62, WD * 1.06], [[0, -0.3, 0.1], 0.05, 0.6, WD * 0.95]],            // the whole home at night, the ask
   ];
   const lerpV = (a, b, u) => a.map((x, i) => x + (b[i] - x) * u);
   const shotAt = t => { let i = 0; while (i < SHOTS.length - 1 && t >= SHOTS[i + 1][0]) i++; return i; };
@@ -62,13 +67,13 @@ export async function start(A) {
     A.setTime(hour(u, t));
   }
 
-  // ---- the hook: the flat starts empty and every piece drops into place ----
+  // ---- the hook: the home starts empty and every piece drops into place ----
   for (const o of A.overlays) o.visible = false;
   for (const it of A.items) it.g.visible = false;
   const floor = A.items.filter(it => !P(it).onTop && !P(it).wall), tops = A.items.filter(it => P(it).onTop), walls = A.items.filter(it => P(it).wall);
   // a sweep from the back left corner to the front right, then what sits on top, then the prints
   const order = [...floor.sort((a, b) => (a.x - a.z * 0.6) - (b.x - b.z * 0.6)), ...tops, ...walls];
-  const d0 = OFF + 0.05, d1 = tLights - 0.35;
+  const d0 = OFF + 0.05, d1 = W(0, 'money') - 0.35;
   const DROPS = order.map((it, i) => [d0 + (d1 - d0) * Math.pow(i / Math.max(1, order.length - 1), 0.9), it]);
   const drop = it => { it.g.visible = true; it.lift = P(it).wall ? 0.35 : P(it).onTop ? 0.45 : 1.3; it.liftV = -1.5; it.awake = true; A.kick(it, 0.35); };
   const TOTAL = A.items.reduce((s, it) => s + price(it), 0);
@@ -100,14 +105,14 @@ export async function start(A) {
   `;
   document.head.appendChild(css);
   const root = document.createElement('div'); root.id = 'reel';
-  root.innerHTML = `<div class="cap"></div><div class="tick"><small>Habitt furniture in this flat</small><b>Rs 0</b></div><div class="touch"></div><div class="ring"></div>
+  root.innerHTML = `<div class="cap"></div><div class="tick"><small>Habitt furniture so far</small><b>Rs 0</b></div><div class="touch"></div><div class="ring"></div>
     <div class="end"><div class="pre">Comment</div><div class="word">PLAY</div><div class="post">and I'll send you the link.</div><div class="mark">Playable <b>SPACES</b></div></div>`;
   document.body.appendChild(root);
   const $r = s => root.querySelector(s);
   const capEl = $r('.cap'), tickEl = $r('.tick'), tickNum = $r('.tick b'), touchEl = $r('.touch'), ringEl = $r('.ring'), endEl = $r('.end');
 
   // captions: each spoken line builds word by word on its words; the last line is the end card instead
-  const cls = w => /^(real|habitt|playable|play)\b/i.test(w) ? 'hi' : /^green/i.test(w) ? 'gr' : /^red/i.test(w) ? 'rd' : '';
+  const cls = w => /^(real|habitt|play|home)\b/i.test(w) ? 'hi' : /^green/i.test(w) ? 'gr' : /^red/i.test(w) ? 'rd' : '';
   let capShown = -1;
   const last = V.scenes.length - 1;
   function drawCaption(t) {
@@ -137,8 +142,7 @@ export async function start(A) {
   // touches: [time, where]; where returns screen x, y
   const onPiece = (it, up = 0.5) => () => A.toScreen(it.g.localToWorld(it.g.position.clone().set(0, up, 0)));
   const onEl = sel => () => { const d = document.querySelector(sel); if (!d) return [-99, -99]; const r = d.getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; };
-  const tPick = W(2, 'pick'), tPut = W(2, 'put'), tGreen = W(3, 'green'), tRed = W(3, 'red'), tBuy = W(5, 'buy'), tHop = W(1, 'playable');
-  const TOUCHES = [[tPick, onPiece(sofa, 0.5)], [tGreen, onEl('#pc-sw .dot[title="Light Green"]')], [tRed, onEl('#pc-sw .dot[title="Red"]')], [tBuy, onEl('#pc-buy')]];
+  const TOUCHES = [[tTry, onPiece(sofa, 0.5)], [tGreen, onEl('#pc-sw .dot[title="Light Green"]')], [tBuy, onEl('#pc-buy')], [tTap, onPiece(sofa, 0.5)]];
   let touchPos = null, touchFor = null;
   function drawTouch(t) {
     const tc = TOUCHES.find(([a]) => t >= a - 0.2 && t < a + 0.7);
@@ -151,7 +155,7 @@ export async function start(A) {
     Object.assign(touchEl.style, { left: x + 'px', top: y + 'px', opacity: k * fade * 0.9, transform: `scale(${(0.6 + 0.4 * k) * press})` });
     const r = easeOut(d / 0.55);
     Object.assign(ringEl.style, { left: x + 'px', top: y + 'px', opacity: d > 0 ? (1 - r) * 0.8 : 0, transform: `scale(${1 + r * 1.4})` });
-    const buy = document.getElementById('pc-buy'); if (buy) buy.classList.toggle('press', tc === TOUCHES[3] && d >= 0 && d < 0.18);
+    const buy = document.getElementById('pc-buy'); if (buy) buy.classList.toggle('press', tc === TOUCHES[2] && d >= 0 && d < 0.18);
   }
   const tEnd = L(last).start - 0.1;
   function drawEnd(t) {
@@ -169,35 +173,45 @@ export async function start(A) {
   }
 
   // ---- events on the room ----
+  // the sofa is held up out of shot after the cut, then dropped so it lands on "delivered"
+  let holdSofa = false;
+  const SOFA_FROM = { x: sofa.x, z: sofa.z, rot: sofa.rot }, MOVE_D = 0.95;
+  function steer(t) {
+    selEl.style.visibility = t >= c4 && t < c5 ? 'hidden' : '';   // the card would hide the sofa while it travels
+    if (holdSofa) { sofa.lift = 1.7; sofa.liftV = 0; sofa.awake = true; }
+    // the move: the spot glides across the room over a second; the float physics trails and swings behind it
+    if (t >= tMove && t <= tMove + MOVE_D + 0.05) {
+      const u = easeIO((t - tMove) / MOVE_D);
+      sofa.x = SOFA_FROM.x + (SOFA_TO.x - SOFA_FROM.x) * u; sofa.z = SOFA_FROM.z + (SOFA_TO.z - SOFA_FROM.z) * u; sofa.rot = SOFA_FROM.rot + (SOFA_TO.rot - SOFA_FROM.rot) * u;
+    }
+  }
   const EVENTS = [
     ...DROPS.map(([at, it]) => [at, () => drop(it)]),
-    ...hoppers.map((it, i) => [tHop + i * 0.035, () => { it.liftV += 2.4; it.awake = true; A.kick(it, 0.6); }]),
-    [tPick, () => A.selectItem(sofa)],
-    [tPut, () => { sofa.x = 0.12; sofa.rot = -Math.PI / 2 + 0.26; }],
+    [tSofa - 0.1, () => A.selectItem(sofa)],
+    [c2b, () => { A.selectItem(null); holdSofa = true; }],
+    [tDeliv - 0.22, () => { holdSofa = false; sofa.liftV = -2; }],
+    [tTry, () => A.selectItem(sofa)],
     [tGreen + 0.06, () => { A.setVariant(sofa, 'Light Green'); A.selectItem(sofa); }],
-    [tRed + 0.06, () => { A.setVariant(sofa, 'Red'); A.selectItem(sofa); }],
-    [c5, () => A.selectItem(null)],
-    [c6, () => A.selectItem(table)],
-    [c6b, () => A.selectItem(bed)],
-    [c7, () => A.selectItem(null)],
+    [c6, () => A.selectItem(null)],
+    [tTap, () => A.selectItem(sofa)],
+    [c9, () => A.selectItem(null)],
   ].sort((a, b) => a[0] - b[0]);
 
   const cuts = SHOTS.slice(1).map(s => s[0]);
   const SFX = [
     ...DROPS.map(([at, it]) => [at + 0.22, P(it).onTop || P(it).wall ? 'tap' : 'thump', { l: P(it).onTop || P(it).wall ? 0.4 : (P(it).h > 0.8 ? 0.55 : 0.32) }]),
     ...LANDS.map(([at]) => [at + 0.02, 'tk', { l: 0.6, p: 1.1 }]),
-    [tLights, 'rise', { l: 0.6, d: 0.6 }],
     ...cuts.map(c => [c, 'air', { l: 0.3, d: 0.22 }]),
-    ...hoppers.map((it, i) => [tHop + i * 0.035 + 0.3, 'tap', { l: 0.4, p: 0.9 + i * 0.04 }]),
-    [tHop, 'bloop', { f: 480, l: 0.6 }],
-    [tPick, 'tap', { l: 1 }], [tPick + 0.05, 'rise', { l: 0.5, d: 0.25 }], [tPick + 0.05, 'flick', { l: 0.5 }],
-    [tPut, 'air', { l: 0.45, d: 0.45 }],
+    [tSofa - 0.1, 'flick', { l: 0.5 }],
+    [tDeliv, 'thump', { l: 1.2 }],
+    [tTry, 'tap', { l: 1 }], [tTry + 0.05, 'rise', { l: 0.5, d: 0.25 }], [tTry + 0.05, 'flick', { l: 0.5 }],
+    [tMove + 0.1, 'air', { l: 0.6, d: MOVE_D }],
     [tGreen, 'tap', { l: 0.9 }], [tGreen + 0.06, 'bloop', { f: 520, l: 0.6 }],
-    [tRed, 'tap', { l: 0.9 }], [tRed + 0.06, 'bloop', { f: 600, l: 0.6 }],
-    ...Array.from({ length: 22 }, (_, i) => [W(4, 'day') + i * 0.075, 'tk', { l: 0.4, p: 1 + i * 0.015 }]),
-    [c6 + 0.05, 'flick', { l: 0.5 }], [c6b + 0.05, 'flick', { l: 0.5 }],
+    [c6 + 0.05, 'thump', { l: 0.6 }],
+    ...Array.from({ length: 16 }, (_, i) => [tSee + i * 0.07, 'tk', { l: 0.4, p: 1 + i * 0.02 }]),
+    [tTap, 'tap', { l: 1 }], [tTap + 0.05, 'flick', { l: 0.5 }],
     [tBuy, 'tap', { l: 1 }],
-    [W(last, 'play') - 0.05, 'thump', { l: 0.6 }], [W(last, 'play') - 0.05, 'bloop', { f: 440, l: 0.6 }],
+    [W(5, 'play') - 0.05, 'thump', { l: 0.6 }], [W(5, 'play') - 0.05, 'bloop', { f: 440, l: 0.6 }],
   ];
 
   // ---- the clock (voice time) ----
@@ -205,6 +219,7 @@ export async function start(A) {
   function advance(dt) {
     t += dt;
     while (ei < EVENTS.length && EVENTS[ei][0] <= t) EVENTS[ei++][1]();
+    steer(t);
     placeShot(t);
     A.renderer.shadowMap.needsUpdate = true;
     A.frame(dt, true);
