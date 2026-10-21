@@ -49,6 +49,8 @@ export default {
 };
 ```
 
+Check a new product alone on `kit/turntable.html?id=<id>&yaw=30&pitch=8` (add `&part=upholstery&v=Red` for a colour); the label prints the built size next to the listed size. The page is local only (kept off Vercel).
+
 `addProduct` turns `dims` into the footprint and height the kit uses for snapping and collisions. Product ids are appended to `PIECE_ORDER`, which share links also depend on, so ids are never removed or reordered.
 
 ## Rules
