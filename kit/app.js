@@ -361,6 +361,22 @@ function placeLayout(list) {
     window.__overlaps.push(`${it.type} at ${it.x}, ${it.z} overlaps ${hit.join(', ') || 'a wall'}`);
   }
   if (window.__overlaps.length) console.warn('layout overlaps:\n' + window.__overlaps.join('\n'));
+  // nothing standing in front of the wall must hide a print: its real mesh bounds against each print's rectangle
+  window.__covered = [];
+  const box = new THREE.Box3();
+  for (const art of items) {
+    const A = PIECES[art.type]; if (!A.wall) continue;
+    const w = wallPlanes[art.plane]; if (!w) continue;
+    const a0 = art.a - A.wall[0] / 2, a1 = art.a + A.wall[0] / 2, y0 = art.y - A.wall[1] / 2;
+    for (const it of items) {
+      if (PIECES[it.type].wall || PIECES[it.type].rug) continue;
+      it.g.updateWorldMatrix(true, true); box.setFromObject(it.g);
+      const [lo, hi, d0, d1] = w.axis === 'z' ? [box.min.x, box.max.x, box.min.z, box.max.z] : [box.min.z, box.max.z, box.min.x, box.max.x];
+      if (Math.min(Math.abs(d0 - w.at), Math.abs(d1 - w.at)) > 0.8 || box.max.y < y0 + 0.05 || hi < a0 + 0.03 || lo > a1 - 0.03) continue;
+      window.__covered.push(`${it.type} at ${it.x}, ${it.z} covers ${art.type} on the ${w.name || 'wall'}`);
+    }
+  }
+  if (window.__covered.length) console.warn('wall art covered:\n' + window.__covered.join('\n'));
   itemsChanged();
 }
 // ---------------------------------------------------------------------------------------------

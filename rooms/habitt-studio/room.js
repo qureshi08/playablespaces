@@ -90,7 +90,7 @@ export default {
     ['habitt-hendrick-dining-table', -2.6, -1.75, 0],
     ['habitt-ease-stripe-dining-chair', -2.9, -1.0, 180], ['habitt-ease-stripe-dining-chair', -2.3, -1.0, 180],
     ['habitt-ease-stripe-dining-chair', -3.43, -1.75, 90], ['habitt-ease-stripe-dining-chair', -1.77, -1.75, -90],
-    ['plant', -1.15, -2.12, 0], ['plant2', -0.45, -2.12, 0],
+    ['plant', -1.25, -2.12, 0],
     // living, round the sofa against the glass
     ['rug', -0.5, -0.6, 90],
     ['habitt-billy-3-seater-sofa', 0.485, -0.6, -90], ['sofadress', 0.6, -0.6, -90],
@@ -106,7 +106,7 @@ export default {
     // work corner
     ['habitt-tubo-workstation', 3.86, 1.63, -90], ['habitt-ease-stripe-dining-chair', 3.3, 1.63, 90], ['snake', 3.88, 0.92, 0],
     // walls
-    ['art', 0, -1.05, 1.55], ['frames', 0, 0.3, 1.55], ['art', 1, -0.9, 1.7],
+    ['art', 0, 0.15, 1.75], ['frames', 1, -1.85, 1.75], ['art', 1, -0.6, 1.7],
   ],
 
   furniture: ['habitt-billy-3-seater-sofa', 'habitt-cane-charm-armchair', 'habitt-kade-coffee-table', 'habitt-kade-side-table', 'habitt-hendrick-dining-table', 'habitt-ease-stripe-dining-chair', 'habitt-marq-king-size-bed', 'habitt-tubo-workstation', 'habitt-otto-series-shelf-04', 'tablelamp', 'lamp', 'rug', 'plant', 'plant2', 'snake', 'art', 'frames', 'kitchen', 'sofadress', 'tabledecor'],

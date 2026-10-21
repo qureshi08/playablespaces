@@ -29,11 +29,11 @@ Pinterest needs Anas's login; Apartment Therapy started blocking automated readi
 
 | Zone | Pieces |
 |---|---|
-| Kitchen and dining, left | Kitchen run on the left wall; Hendrick table by the window with 4 Ease Stripe chairs; OTTO shelf with books and a bowl on top; a fiddle fig; a snake plant by the kitchen |
-| Living, centre | Billy sofa backed to the glass with cushions and a throw; a Kade side table and lamp at each end; Kade coffee table on the rug with books and a bowl; two Cane Charm chairs facing the sofa; an arc lamp; a bird of paradise in the corner |
+| Kitchen and dining, left | Kitchen run on the left wall; Hendrick table by the window with 4 Ease Stripe chairs; OTTO shelf with books and a bowl on top |
+| Living, centre | Billy sofa backed to the glass with cushions and a throw; a Kade side table and lamp at each end; Kade coffee table on the rug with books and a bowl; two Cane Charm chairs facing the sofa; an arc lamp; the fiddle fig on the back wall by the dining window, clear of the print |
 | Bedroom, behind the glass | Marq bed under its window; a Kade side table and lamp each side; a fiddle fig and a snake plant |
 | Work corner | TUBO workstation on the right wall with an Ease Stripe chair (a Habitt piece instead of the generic office chair, whose colours were invented) |
-| Walls | A print and a pair of prints on the back wall, a print on the left wall |
+| Walls | A print centred over the living area on the back wall; a pair of prints above the OTTO shelf and a print beside it on the left wall. No plant or lamp stands in front of any print |
 
 ## Colours
 
