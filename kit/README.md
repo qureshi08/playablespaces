@@ -24,6 +24,10 @@ Copy `rooms/studio/room.js` and change the numbers. Units are metres; x runs lef
 | window | `from`, `to` (along the wall), `y0`, `y1` (sill and head height), `mullions` (vertical bars), `transom` (a horizontal bar as a fraction of the height), `curtains` (`['start']`, `['end']` or both) |
 | door | `from`, `to`, `h` (head height on a tall wall, default 2.1), `mat: true` for a doormat |
 | `shell.partitions` | `height`, `thick`, and `list[]` of runs: `{ x, z: [from, to], doors }` runs along z at that x; `{ z, x: [from, to], doors }` runs along x at that z. `doors` is a list of `[from, to]` gaps |
+| `shell.bookColours` | `true` paints wall caps and skirting with the walls slot and the outer wall faces, corner posts and plinth with the `slats` (Frames) slot, so nothing keeps the kit's own colours |
+| partition `glass: true` | A full height steel and glass screen instead of a solid wall; its frame takes the partition's `slot` |
+| `setting: 'palette'` | Replaces the night city studio with a plain setting in the `slats` colour (darker at night); curtains take the wall colour, generic pots and lamp bases the accent colour |
+| `slotNames` | Renames slots on the moodboard, for example `{ slats: 'Frames' }` |
 | `shell.slatWall` | Optional battens: `{ side, from, to }` |
 | `shell.hang[]` | Where shelves and prints can hang, on the left or back wall: `{ side, from, to, inset, name }`. Share links store a wall piece by its number in this list, so only ever append |
 | `start`, `moods` | The mood a visitor lands on, and each mood: `name`, `note`, `h` (hour of day), `mats` (a material id per slot) |
