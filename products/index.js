@@ -23,3 +23,7 @@ export function addProduct(p) {
     : { ...p, build: p.build, fp: [w, d], h };
   PIECE_ORDER.push(p.id);
 }
+
+// real products, in the order they were added (share links depend on it)
+import habitt from './habitt/index.js';
+for (const p of habitt) addProduct(p);

@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Product turntable</title>
+<!-- dev tool: one product alone, for comparing against the store photo. ?id=<product id>&yaw=<deg>&v=<variant>&part=<part> -->
+<style>html, body { margin: 0; height: 100%; background: #f2f1ee; overflow: hidden; } #info { position: fixed; left: 12px; top: 10px; font: 600 13px Inter, Arial, sans-serif; color: #1A1205; }</style>
+<script type="importmap">
+{ "imports": { "three": "../vendor/three/build/three.module.js", "three/addons/": "../vendor/three/addons/" } }
+</script>
+</head>
+<body>
+<div id="info"></div>
+<script type="module">
+import * as THREE from 'three';
+import { initTextures } from './textures.js';
+import { buildEnv } from './studio.js';
+import { setSlotNow, MAT, SLOT_KEYS } from './materials.js';
+import { PIECES } from '../products/index.js';
+
+const q = new URLSearchParams(location.search), id = q.get('id'), P = PIECES[id];
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2)); renderer.setSize(innerWidth, innerHeight);
+renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+document.body.appendChild(renderer.domElement);
+initTextures(renderer);
+const scene = new THREE.Scene(); scene.background = new THREE.Color('#f2f1ee'); scene.environment = buildEnv(renderer); scene.environmentIntensity = 0.9;
+// the room slots some products borrow (bedding) get their cozy defaults
+const cozy = { floor: 'oak', wallL: 'limewash', wallB: 'limewash', slats: 'walnut', upholstery: 'boucle', accent: 'rust', bedding: 'linen', rug: 'knit', joinery: 'walnut' };
+for (const k of SLOT_KEYS) setSlotNow(k, MAT[cozy[k]]);
+const sun = new THREE.DirectionalLight('#ffffff', 2.2); sun.position.set(3, 6, 4); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
+Object.assign(sun.shadow.camera, { left: -3, right: 3, top: 3, bottom: -3 }); scene.add(sun, new THREE.HemisphereLight('#ffffff', '#c9c4ba', 0.8));
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(40, 40), new THREE.ShadowMaterial({ opacity: 0.18 })); ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; scene.add(ground);
+if (!P) document.getElementById('info').textContent = 'No product ' + id;
+else {
+  const part = q.get('part'), v = q.get('v'), g = P.build(part && v ? { [part]: v } : {});
+  g.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+  scene.add(g);
+  const box = new THREE.Box3().setFromObject(g), size = box.getSize(new THREE.Vector3()), c = box.getCenter(new THREE.Vector3());
+  document.getElementById('info').textContent = `${P.name} · built ${size.x.toFixed(3)} × ${size.z.toFixed(3)} × ${size.y.toFixed(3)} m · listed ${P.fp ? P.fp.map(n => n.toFixed(3)).join(' × ') : ''} × ${P.h.toFixed(3)} m`;
+  const yaw = THREE.MathUtils.degToRad(+(q.get('yaw') ?? 30)), pitch = THREE.MathUtils.degToRad(+(q.get('pitch') ?? 12));
+  const cam = new THREE.PerspectiveCamera(28, innerWidth / innerHeight, 0.05, 50), r = Math.max(size.x, size.y, size.z) * 2.6;
+  cam.position.set(c.x + Math.sin(yaw) * Math.cos(pitch) * r, c.y + Math.sin(pitch) * r, c.z + Math.cos(yaw) * Math.cos(pitch) * r); cam.lookAt(c);
+  renderer.render(scene, cam);
+  window.__built = { x: size.x, y: size.y, z: size.z };
+}
+</script>
+</body>
+</html>
