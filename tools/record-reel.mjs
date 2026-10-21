@@ -37,10 +37,13 @@ if (stills) {
     const name = path.join(out, `still_${String(s).replace('.', '_')}.jpg`);
     await page.screenshot({ path: name, type: 'jpeg', quality: 88 }); names.push(name);
   }
-  // one contact sheet, each still at 270 x 480
-  const inputs = names.flatMap(n => ['-i', n]);
-  const cols = Math.min(names.length, 5), rows = Math.ceil(names.length / cols);
-  execFileSync(FF, ['-y', ...inputs, '-filter_complex', names.map((_, i) => `[${i}:v]scale=270:480[s${i}]`).join(';') + ';' + names.map((_, i) => `[s${i}]`).join('') + `xstack=inputs=${names.length}:layout=` + names.map((_, i) => `${(i % cols) * 270}_${Math.floor(i / cols) * 480}`).join('|') + (names.length < cols * rows ? ':fill=black' : ''), '-frames:v', '1', path.join(out, 'contact.jpg')], { stdio: ['ignore', 'ignore', 'pipe'] });
+  // one contact sheet, each still at 270 x 480, 7 to a row (sharp from the House Walkthrough install; this ffmpeg's
+  // xstack has no fill option, so an uneven last row failed)
+  const sharp = createRequire(path.join(HERE, '..', '..', 'House Walkthrough', 'package.json'))('sharp');
+  const cols = Math.min(names.length, 7), rows = Math.ceil(names.length / cols);
+  const tiles = await Promise.all(names.map(n => sharp(n).resize(270, 480).toBuffer()));
+  await sharp({ create: { width: 270 * cols, height: 480 * rows, channels: 3, background: '#111' } })
+    .composite(tiles.map((input, i) => ({ input, left: (i % cols) * 270, top: Math.floor(i / cols) * 480 }))).jpeg({ quality: 85 }).toFile(path.join(out, 'contact.jpg'));
   console.log('stills ->', out, 'contact.jpg');
 } else {
   const dir = path.join(out, 'frames'); fs.rmSync(dir, { recursive: true, force: true }); fs.mkdirSync(dir);
@@ -52,7 +55,7 @@ if (stills) {
   const wav = path.join(out, 'sound.wav');
   fs.writeFileSync(wav, Buffer.from(await page.evaluate(() => __reel.audio()), 'base64'));
   execFileSync(FF, ['-y', '-framerate', String(fps), '-i', path.join(dir, 'f%05d.jpg'), '-i', wav, '-c:v', 'libx264', '-preset', 'slow', '-crf', '17', '-pix_fmt', 'yuv420p',
-    '-c:a', 'aac', '-b:a', '192k', '-shortest', '-movflags', '+faststart', path.join(out, 'final.mp4')], { stdio: 'ignore' });
+    '-af', 'loudnorm=I=-14:TP=-1.5:LRA=11', '-ar', '48000', '-c:a', 'aac', '-b:a', '192k', '-shortest', '-movflags', '+faststart', path.join(out, 'final.mp4')], { stdio: 'ignore' });
   console.log('video ->', path.join(out, 'final.mp4'));
 }
 if (errors.length) console.log('page errors:\n' + errors.join('\n'));

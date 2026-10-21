@@ -1349,9 +1349,11 @@ function frame(dt, force = false) {
 // dev: ?reel plays the promo reel script for this room (kit/reel.js, kept off the live site)
 if (new URLSearchParams(location.search).has('reel')) {
   renderer.setAnimationLoop(null);
+  notesOn = false;   // no sun path, sun or moon markers in a reel
   const api = { frame, items, PIECES, MOODS, MAT, SLOT_KEYS, R, cam, camGoal, HOME, camera, selectItem, setVariant, applyPose, kick, curMat,
     wipe: (k, id) => { wipeSlot(k, MAT[id], new THREE.Vector3(0, 0.5, R.Z1), now); boardDirty = true; },
-    setTime: h => { hAnim = null; H = hTarget = h; applyDaylight(H); }, toScreen, getNow: () => now };
+    setTime: h => { hAnim = null; H = hTarget = h; applyDaylight(H); }, toScreen, getNow: () => now,
+    flat, itemsRoot, renderer, overlays: [arcLine, sunSprite, moonSprite] };
   import('./reel.js').then(m => m.start(api));
 }
 
