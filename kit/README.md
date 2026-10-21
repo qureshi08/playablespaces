@@ -30,6 +30,8 @@ Copy `rooms/studio/room.js` and change the numbers. Units are metres; x runs lef
 | `layout[]` | `[product, x, z, rotation degrees]` on the floor, `[product, hang index, along, height]` on a wall |
 | `camera.home`, `camera.shots[]` | The landing view (`target`, `yaw`, `pitch`, `dist`) and the cinematic shots. On a tall phone screen the kit backs the camera off by itself |
 | `notes` | The floating swatch cards: `y`, `z`, and `cards[]` of `[slot, x]` |
+| `materials`, `onlyRoomMaterials` | The room's own samples (its Wada palette, each with its `combo` number) and whether the swatch tray shows only those |
+| `furniture` | The pieces the Furniture tab offers in this room (default: every piece) |
 | `anchors` | A point on each slot, `[x, y, z]`, or `{ piece: [ids], at: [x, y, z], or: [x, y, z] }` to follow a product wherever it is moved |
 
 ## Products
