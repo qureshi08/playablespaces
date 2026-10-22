@@ -32,7 +32,7 @@ Name the highlights in Instagram; the covers carry no words.
 ## Account settings (@playablespaces, set up 2026-10-22)
 
 1. Security: two-factor authentication on (Accounts Centre, Password and security), with an authenticator app or SMS.
-2. Professional account: Creator, category Digital creator, category shown on the profile. Contact: an email, shown, so brands can reach it.
+2. Name: `Playable Spaces | 3D Homes` (the name field is searchable). Professional account: **Business** (changed from Creator on 2026-10-22: Playable Spaces sells a service to brands, the reels use no licensed music, and Business adds contact buttons, Meta Business Suite and ads later). Category Product/service, shown on the profile. Contact: an email button, so brands can reach it.
 3. Privacy: public. Mentions, tags, comments and remixes open to everyone. Comment filter (hide offensive comments) on.
 4. Messages: message requests from everyone, so brands and buyers land in Requests, not nowhere. Saved reply with the shortcut `play` that pastes the link DM from rooms/<space>/post.md.
 5. Every reel with the Gemini voice gets Instagram's AI label (Instagram names a reel narrated with a realistic AI voice as content that needs it).
