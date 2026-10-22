@@ -842,16 +842,42 @@ function setHoverSlot(k) {
 
 // orbit / pan
 let press = null;   // { x, y, button, moved, hit, mode }
+// touch: two fingers pinch to zoom and drag together to pan; the finger left after a pinch does nothing until lifted
+const touches = new Map();
+let pinch = null;   // { d, dist, mx, my }
+const touchPair = () => { const [a, b] = [...touches.values()]; return { d: Math.hypot(a.x - b.x, a.y - b.y) || 1, mx: (a.x + b.x) / 2, my: (a.y + b.y) / 2 }; };
+const MAX_DIST = () => Math.max(40, HOME.dist * 1.2);
+function panBy(dx, dy) {
+  const s = camGoal.dist * 0.0011, right = new THREE.Vector3(Math.cos(camGoal.yaw), 0, -Math.sin(camGoal.yaw)), fwd = new THREE.Vector3(-Math.sin(camGoal.yaw), 0, -Math.cos(camGoal.yaw));
+  camGoal.target.addScaledVector(right, -dx * s).addScaledVector(fwd, dy * s);
+  clampTarget();
+}
 canvas.addEventListener('contextmenu', e => e.preventDefault());
 canvas.addEventListener('pointerdown', e => {
+  if (e.pointerType === 'touch') touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
   if (drag) return;
   canvas.setPointerCapture(e.pointerId);
+  if (touches.size >= 2) {
+    press = null; tip(null);
+    const p = touchPair(); pinch = { d: p.d, dist: camGoal.dist, mx: p.mx, my: p.my };
+    if (cine) setCine(false);
+    return;
+  }
+  if (pinch) return;
   const hit = e.button === 0 ? pick(e.clientX, e.clientY) : null;
   press = { x: e.clientX, y: e.clientY, lx: e.clientX, ly: e.clientY, button: e.button, moved: false, hit, mode: null };
   if (cine) setCine(false);
 });
 canvas.addEventListener('pointermove', e => {
+  if (touches.has(e.pointerId)) touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
   if (drag) return;
+  if (pinch) {
+    if (touches.size < 2) return;
+    const p = touchPair();
+    camGoal.dist = clamp(pinch.dist * pinch.d / p.d, 4, MAX_DIST());
+    panBy(p.mx - pinch.mx, p.my - pinch.my); pinch.mx = p.mx; pinch.my = p.my;
+    return;
+  }
   if (!press) { hoverAt = [e.clientX, e.clientY]; return; }
   const dx = e.clientX - press.lx, dy = e.clientY - press.ly;
   press.lx = e.clientX; press.ly = e.clientY;
@@ -864,15 +890,18 @@ canvas.addEventListener('pointermove', e => {
   }
   if (!press.moved) return;
   if (press.mode === 'orbit') { camGoal.yaw -= dx * 0.005; camGoal.pitch = clamp(camGoal.pitch + dy * 0.004, 0.08, 1.45); }
-  if (press.mode === 'pan') {
-    const s = camGoal.dist * 0.0011, right = new THREE.Vector3(Math.cos(camGoal.yaw), 0, -Math.sin(camGoal.yaw)), fwd = new THREE.Vector3(-Math.sin(camGoal.yaw), 0, -Math.cos(camGoal.yaw));
-    camGoal.target.addScaledVector(right, -dx * s).addScaledVector(fwd, dy * s);
-    clampTarget();
-  }
+  if (press.mode === 'pan') panBy(dx, dy);
   if (press.mode === 'sun') dragSun(e.clientX, e.clientY);
 });
+const touchEnd = e => {
+  touches.delete(e.pointerId);
+  if (pinch && touches.size === 0) pinch = null;
+};
+canvas.addEventListener('pointercancel', e => { touchEnd(e); press = null; });
 canvas.addEventListener('pointerup', e => {
+  const wasPinch = !!pinch; touchEnd(e);
   if (drag) return;
+  if (wasPinch) { press = null; return; }
   const p = press; press = null;
   if (!p) return;
   if (p.mode === 'sun') afterChange();
@@ -886,7 +915,7 @@ canvas.addEventListener('pointerleave', () => { if (!press) { tip(null); setHove
 canvas.addEventListener('wheel', e => {
   e.preventDefault();
   if (drag && drag.kind === 'move' && drag.item) { turnHeld(e.deltaY > 0 ? 1 : -1); return; }
-  camGoal.dist = clamp(camGoal.dist * Math.exp(e.deltaY * 0.0011), 4, Math.max(40, HOME.dist * 1.2));
+  camGoal.dist = clamp(camGoal.dist * Math.exp(e.deltaY * 0.0011), 4, MAX_DIST());
 }, { passive: false });
 let lastSurfacePoint = null;
 function clampTarget() { camGoal.target.x = clamp(camGoal.target.x, -8, 8); camGoal.target.z = clamp(camGoal.target.z, -7, 7); }
@@ -937,13 +966,20 @@ function placeSelBar() {
   if (!sel) return;
   const P = PIECES[sel.type], top = sel.g.localToWorld(new THREE.Vector3(0, P.wall ? P.wall[1] / 2 + 0.1 : P.h + 0.15, 0));
   const [x, y] = toScreen(top);
-  // keep the card on screen: clamp it sideways, and drop it below the piece when there is no room above
+  // keep the card on screen and off the toolbar, brand and palette buttons: clamp it sideways, drop it below the piece
+  // when there is no room above, and push it under any of those it would still cover (on a phone they share the top)
   const w = selEl.offsetWidth, h = selEl.offsetHeight, m = 8;
-  const below = y - 6 - h < m;
+  const left = clamp(x, w / 2 + m, innerWidth - w / 2 - m);
+  const ui = UI_TOP.map(s => $(s)).filter(el => el && el.offsetParent).map(el => el.getBoundingClientRect());
+  const hits = top => ui.filter(r => r.left < left + w / 2 && r.right > left - w / 2 && r.top < top && r.bottom > top - h);
+  let below = y - 6 - h < m || hits(y - 6).length > 0;
   const foot = below ? toScreen(sel.g.localToWorld(new THREE.Vector3(0, 0, 0)))[1] : 0;
-  selEl.style.left = clamp(x, w / 2 + m, innerWidth - w / 2 - m) + 'px';
-  selEl.style.top = (below ? Math.min(foot + 14 + h, innerHeight - m) : y - 6) + 'px';
+  let t = below ? Math.min(foot + 14 + h, innerHeight - m) : y - 6;
+  for (const r of hits(t)) t = Math.max(t, r.bottom + m + h);
+  selEl.style.left = left + 'px';
+  selEl.style.top = t + 'px';
 }
+const UI_TOP = ['.tools', '.brand', '.moods'];
 function turn(it, dir) {
   const P = PIECES[it.type];
   if (P.wall) { toast("Wall pieces don't turn"); return; }
@@ -974,7 +1010,7 @@ function bindDragSource(el, src) {
       removeEventListener('pointermove', move); removeEventListener('pointerup', up);
       if (started) dragEnd(ev);
       else if (src.kind === 'sample') clickSample(src.m);
-      else toast('Drag it into the room');
+      else addPiece(src.type);
     };
     addEventListener('pointermove', move); addEventListener('pointerup', up);
   });
@@ -984,6 +1020,43 @@ function clickSample(m) {
   pushUndo();
   if (setMaterial(slot, m.id, selSlot === slot && lastSurfacePoint ? lastSurfacePoint : null)) toast(`${m.name} on the ${SLOTS[slot].name.toLowerCase()}`);
   else popUndo();
+}
+// a tap on a piece in the tray (the way in on a phone) puts it on the nearest free spot to the middle of the view,
+// by the same rules as dragging: floor pieces on the grid without overlaps, wall pieces on a wall with room,
+// table lamps and decor on a free table top; then it drops in and its card opens
+function addPiece(type) {
+  const P = PIECES[type], tx = camGoal.target.x, tz = camGoal.target.z;
+  pushUndo();
+  const it = spawn(type);
+  const inside = (x, z, rot) => footprint(type, x, z, rot).every(poly => poly.every(([px, pz]) => px > R.X0 && px < R.X1 && pz > R.Z0 && pz < R.Z1));
+  let ok = false;
+  if (P.wall) {
+    const y = clamp(P.y ?? 1.5, P.wall[1] / 2 + 0.36, R.H - P.wall[1] / 2 - 0.09);
+    const spots = [];
+    wallPlanes.forEach((w, i) => { for (let a = w.a0 + P.wall[0] / 2 + 0.05; a <= w.a1 - P.wall[0] / 2 - 0.05; a += 0.1) spots.push([i, Math.round(a * 10) / 10, Math.hypot((w.axis === 'z' ? a : w.at) - tx, (w.axis === 'z' ? w.at : a) - tz)]); });
+    for (const [i, a] of spots.sort((p, q) => p[2] - q[2])) if (wallFits(type, i, a, y, it)) { it.plane = i; it.a = a; it.y = y; ok = true; break; }
+  } else if (P.onTop) {
+    // tables and shelves only: a sofa's or a bed's surface is its seat or mattress, there for cushions and throws
+    const tops = items.filter(o => o !== it && PIECES[o.type].surface && !PIECES[o.type].wall && !/sofa|bed|chair/i.test(PIECES[o.type].name) && !items.some(t => t !== it && PIECES[t.type].onTop && Math.hypot(t.x - o.x, t.z - o.z) < 0.35));
+    const o = tops.sort((p, q) => Math.hypot(p.x - tx, p.z - tz) - Math.hypot(q.x - tx, q.z - tz))[0];
+    if (o) { it.x = o.x; it.z = o.z; it.rot = o.rot; ok = true; }
+  } else {
+    search: for (let r = 0; r <= 6; r += 0.2) {
+      const n = r === 0 ? 1 : Math.ceil(r * 10);
+      for (let k = 0; k < n; k++) for (const rot of [0, Math.PI / 2]) {
+        const ang = (k / n) * Math.PI * 2, [x, z] = snapFloor(type, tx + Math.cos(ang) * r, tz + Math.sin(ang) * r, rot);
+        if (inside(x, z, rot) && fits(type, x, z, rot, it)) { it.x = x; it.z = z; it.rot = rot; ok = true; break search; }
+      }
+    }
+  }
+  if (!ok) { remove(it); popUndo(); toast(`No free spot for the ${P.name.toLowerCase()}, move something first`); return; }
+  applyPose(it); itemsChanged(); afterChange();
+  it.lift = P.wall ? 0.3 : 0.9; it.liftV = -1.2; it.awake = true; kick(it);
+  selectItem(it); renderer.shadowMap.needsUpdate = true;
+  // if it landed out of view (a print on a far wall, a spot behind the camera), glide the view over to it
+  const at = it.g.getWorldPosition(new THREE.Vector3()), [sx, sy, sz] = toScreen(at);
+  if (sz > 1 || sx < 30 || sx > innerWidth - 30 || sy < 120 || sy > innerHeight - 200) { camGoal.target.set(at.x, camGoal.target.y, at.z); clampTarget(); }
+  toast(`${P.name} added · drag it where you like`);
 }
 function beginDrag(src, el, e) {
   tip(null); selectItem(null);

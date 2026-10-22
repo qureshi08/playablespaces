@@ -214,7 +214,8 @@ dialog code { font: 600 12px var(--ui); background: #1A12050f; padding: 1px 6px;
   .brand h1 span { font-size: 13px; display: inline; } .brand h1 b { font-size: 19px; display: inline; } .brand small { display: none; }
   .moods { margin-right: 88px; } .mood { padding: 6px 7px; } .mood .pal { height: 10px; margin-bottom: 4px; } .mood b { font-size: 12.5px; }
   .mood small, .meter, .why, .board, .light { display: none; }
-  .tools { top: 12px; right: 12px; } .tools .dsk { display: none; }
+  #ui-hint { top: 104px; }
+  .tools { top: 12px; right: 12px; gap: 4px; } .tools .sep, .tools #notes { display: none; } .tools button { width: 31px; height: 31px; }
   .tray { left: 8px; right: 8px; bottom: 8px; transform: none; max-width: none; min-width: 0; padding: 8px; }
   .tabs button { padding: 0 8px; font-size: 12px; } .tabs .div { margin: 0 3px; }
   .tmini { display: flex; align-items: center; gap: 10px; margin: 0 2px 6px; } .tmini .clock { flex: none; width: 44px; } .tmini .tslide { flex: 1; margin: 0; }
