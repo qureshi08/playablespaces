@@ -95,6 +95,13 @@ export async function start(A) {
     return out;
   };
 
+  // ---- real habitt.com pages, captured at 390 x 844 by tools/capture-site.mjs into _reels/<room>/site/ ----
+  const SD = '/_reels/' + ROOM + '/site/';
+  const SITE = { list: SD + 'sofas.jpg', page: ['grey', 'red', 'light-green', 'off-white', 'grey'].map(c => SD + 'billy-' + c + '.jpg') };
+  // the Billy 3 Seater Sofa tile on the listing, in the 1080 px wide capture (second row, right column)
+  const TILE = { x: 792, y: 1830 }, PHONE_W = 260, SCREEN_H = PHONE_W * 844 / 390, SCROLL = TILE.y * PHONE_W / 1080 - SCREEN_H * 0.5;
+  await Promise.all([SITE.list, ...SITE.page].map(u => { const im = new Image(); im.src = u; return im.decode().catch(() => console.warn('page capture failed', u)); }));
+
   // ---- overlay ----
   const css = document.createElement('style');
   css.textContent = `
@@ -106,10 +113,14 @@ export async function start(A) {
     #reel .tick { position: absolute; left: 0; right: 0; top: 23%; display: flex; flex-direction: column; align-items: center; gap: 4px; opacity: 0; }
     #reel .tick small { font: 600 12px var(--ui); letter-spacing: .08em; text-transform: uppercase; color: #FFFEFAcc; }
     #reel .tick b { font: 800 40px/1 var(--display); color: var(--paper-hi); font-variant-numeric: tabular-nums; text-shadow: 0 4px 20px #00000070; }
-    #reel .photo { position: absolute; inset: 0; opacity: 0; transform-origin: 50% 50%; }
-    #reel .photo img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; box-sizing: border-box; border: 0 solid #FFFEFA; border-radius: 4px; }
     #reel .dim { position: absolute; inset: 0; background: #0b141c; opacity: 0; }
-    #reel .flash { position: absolute; inset: 0; background: #FFFEFA; opacity: 0; }
+    #reel .shop { position: absolute; left: 50%; top: 22%; width: ${PHONE_W + 18}px; height: ${SCREEN_H + 18}px; box-sizing: border-box; padding: 9px; border-radius: 34px; background: #111; box-shadow: 0 30px 70px #000000a0, inset 0 0 0 2px #333; opacity: 0; }
+    #reel .shop .screen { position: relative; width: 100%; height: 100%; border-radius: 26px; overflow: hidden; background: #fff; }
+    #reel .shop .screen > img { position: absolute; left: 0; top: 0; width: 100%; display: block; }
+    #reel .shop .hdr { position: absolute; left: 0; right: 0; top: 0; height: ${Math.round(42 * PHONE_W / 390)}px; overflow: hidden; z-index: 1; }
+    #reel .shop .hdr img { width: 100%; display: block; }
+    #reel .shop .page { position: absolute; inset: 0; background: #fff; transform: translateX(100%); }
+    #reel .shop .page img { width: 100%; display: block; }
     #reel .site { position: absolute; padding: 9px 14px; border-radius: 999px; background: #FFFEFA; color: var(--ink); font: 600 13px var(--ui); box-shadow: 0 10px 30px #00000055; white-space: nowrap; opacity: 0; transform: translate(-50%, 0); }
     #reel .site i { font-style: normal; color: var(--green); }
     #reel .touch { position: absolute; width: 46px; height: 46px; margin: -23px 0 0 -23px; border-radius: 50%; background: #FFFEFAcc; box-shadow: 0 4px 18px #00000040; opacity: 0; }
@@ -129,7 +140,7 @@ export async function start(A) {
   `;
   document.head.appendChild(css);
   const root = document.createElement('div'); root.id = 'reel';
-  root.innerHTML = `<div class="dim"></div><div class="photo"><img alt=""></div><div class="flash"></div>
+  root.innerHTML = `<div class="dim"></div><div class="shop"><div class="screen"><img class="list" src="${SITE.list}" alt=""><div class="hdr"><img src="${SITE.list}" alt=""></div><div class="page"><img src="${SITE.page[0]}" alt=""></div></div></div>
     <div class="cap"></div><div class="tick"><small>Habitt furniture in this home</small><b>Rs 0</b></div>
     <div class="site">habitt.com<i>/products/billy-3-seater-sofa</i></div><div class="touch"></div><div class="ring"></div>
     <div class="endbg"></div><div class="end"><div class="mark">Playable <b>SPACES</b></div><div class="tag">A home you can play with before you buy.</div>
@@ -137,7 +148,7 @@ export async function start(A) {
   document.body.appendChild(root);
   const $r = s => root.querySelector(s);
   const capEl = $r('.cap'), tickEl = $r('.tick'), tickNum = $r('.tick b'), touchEl = $r('.touch'), ringEl = $r('.ring'), endEl = $r('.end');
-  const photoEl = $r('.photo'), photoImg = $r('.photo img'), dimEl = $r('.dim'), flashEl = $r('.flash'), siteEl = $r('.site');
+  const dimEl = $r('.dim'), shopEl = $r('.shop'), listImg = $r('.shop .list'), pageEl = $r('.shop .page'), pageImg = $r('.shop .page img'), siteEl = $r('.site');
 
   // captions: each spoken line builds word by word on its words
   const cls = w => /^(real|habitt|play|playable|spaces)/i.test(w) ? 'hi' : '';
@@ -163,19 +174,22 @@ export async function start(A) {
     tickEl.style.opacity = easeOut((t - OFF - 0.05) / 0.3) * (1 - easeOut((t - c1 + 0.15) / 0.2));
     tickNum.style.transform = `scale(${LANDS.some(([at]) => t >= at && t < at + 0.12) ? 1.06 : 1})`;
   }
-  // the photo: the sofa shot freezes into a print on "photo", shakes on "gamble", and flicks away before the delivery
-  let snapped = false;
-  function drawPhoto(t) {
-    if (!snapped && t >= tPhoto) { photoImg.src = A.renderer.domElement.toDataURL('image/jpeg', 0.92); snapped = true; }
-    flashEl.style.opacity = t >= tPhoto ? 0.8 * (1 - easeOut((t - tPhoto) / 0.3)) : 0;
-    const on = snapped && t < c3 + 0.05;
-    if (!on) { photoEl.style.opacity = 0; dimEl.style.opacity = 0; return; }
-    const k = easeOut((t - tPhoto) / 0.5), away = easeIn((t - (c3 - 0.35)) / 0.35);
-    const shake = t > tGamble && t < tGamble + 0.45 ? Math.sin((t - tGamble) * 60) * 3 * (1 - (t - tGamble) / 0.45) : 0;
-    photoEl.style.opacity = 1;
-    photoEl.style.transform = `translateY(${-away * 120}%) rotate(${-3.5 * k + shake - away * 9}deg) scale(${1 - 0.28 * k})`;
-    photoImg.style.borderWidth = (14 * k) + 'px'; photoImg.style.boxShadow = `0 ${24 * k}px ${60 * k}px #00000080`;
-    dimEl.style.opacity = 0.72 * k * (1 - away);
+  // the website: real habitt.com pages captured at phone size (tools/capture-site.mjs) in a phone. The sofa listing
+  // scrolls, a tap opens the Billy sofa, on "photo" its real page is up, on "gamble" its colours flick, then it flies away
+  const tTile = W(2, 'furniture');
+  function drawShop(t) {
+    const on = t >= c2 && t < c3 + 0.05;
+    if (!on) { shopEl.style.opacity = 0; dimEl.style.opacity = 0; return; }
+    const k = easeOut((t - c2) / 0.35), away = easeIn((t - (c3 - 0.35)) / 0.35);
+    dimEl.style.opacity = 0.86 * k * (1 - away);
+    shopEl.style.opacity = k;
+    shopEl.style.transform = `translate(-50%, ${(1 - k) * 30 - away * 140}%) rotate(${-away * 8}deg)`;
+    // the listing scrolls until the Billy tile sits under the thumb, then the product page slides over it
+    listImg.style.transform = `translateY(${-easeIO((t - c2 - 0.15) / (tTile - 0.25 - c2 - 0.15)) * SCROLL}px)`;
+    const p = easeOut((t - tTile - 0.3) / 0.35);
+    pageEl.style.transform = `translateX(${(1 - p) * 100}%)`;
+    const flips = Math.floor((t - tGamble) / 0.16);
+    pageImg.src = SITE.page[t < tGamble || flips >= SITE.page.length ? 0 : flips];
   }
   // the website: a link pill rises out of the Buy button on "Habitt's website"
   function drawSite(t) {
@@ -191,7 +205,8 @@ export async function start(A) {
   const onEl = sel => () => { const d = document.querySelector(sel); if (!d) return [-99, -99]; const r = d.getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; };
   const SWATCHES = ['Light Green', 'Red', 'Off White', 'Grey', 'Light Green'].map((v, i) => [tChange + i * 0.29, v]);
   const BUY_TOUCH = [tBuy, onEl('#pc-buy')];
-  const TOUCHES = [[tTry, onPiece(sofa, 0.5)], ...SWATCHES.map(([at, v]) => [at, onEl(`#pc-sw .dot[title="${v}"]`)]), [tWhen, onPiece(sofa, 0.5)], BUY_TOUCH].sort((a, b) => a[0] - b[0]);
+  const onTile = () => { const r = listImg.getBoundingClientRect(); return [r.left + TILE.x * PHONE_W / 1080, r.top + TILE.y * PHONE_W / 1080]; };
+  const TOUCHES = [[tTile, onTile], [tTry, onPiece(sofa, 0.5)], ...SWATCHES.map(([at, v]) => [at, onEl(`#pc-sw .dot[title="${v}"]`)]), [tWhen, onPiece(sofa, 0.5)], BUY_TOUCH].sort((a, b) => a[0] - b[0]);
   let touchPos = null, touchFor = null;
   function drawTouch(t) {
     let tc = null; for (const x of TOUCHES) if (t >= x[0] - 0.12 && t < x[0] + 0.6) tc = x;
@@ -260,7 +275,7 @@ export async function start(A) {
     ...cuts.map(c => [c, 'air', { l: 0.28, d: 0.22 }]),
     ...hoppers.map((it, i) => [tPlay + i * 0.03 + 0.3, 'tap', { l: 0.35, p: 0.9 + i * 0.04 }]), [tPlay, 'bloop', { f: 480, l: 0.5 }],
     [tReal, 'flick', { l: 0.5 }], [tPrice - 0.1, 'flick', { l: 0.5 }],
-    [tPhoto, 'flick', { l: 1 }], [tPhoto, 'air', { l: 0.4, d: 0.3 }], [tGamble, 'scratch', { l: 0.5 }],
+    ...Array.from({ length: 10 }, (_, i) => [c2 + 0.3 + i * 0.12, 'tk', { l: 0.35, p: 1.05 }]), [tPhoto, 'air', { l: 0.5, d: 0.3 }], [tPhoto + 0.05, 'tap', { l: 0.8 }], ...[0, 1, 2, 3].map(i => [tGamble + i * 0.15, 'flick', { l: 0.6 }]),
     [tDeliv, 'thump', { l: 1.2 }],
     [tTry, 'tap', { l: 1 }], [tTry + 0.05, 'rise', { l: 0.5, d: 0.25 }],
     [tMove + 0.1, 'air', { l: 0.6, d: MOVE_D }],
@@ -280,7 +295,7 @@ export async function start(A) {
     placeShot(t);
     A.renderer.shadowMap.needsUpdate = true;
     A.frame(dt, true);
-    drawCaption(t); clearCaption(); drawTicker(t, dt); drawPhoto(t); drawSite(t); drawTouch(t); drawEnd(t);
+    drawCaption(t); clearCaption(); drawTicker(t, dt); drawShop(t); drawSite(t); drawTouch(t); drawEnd(t);
   }
   placeShot(t); A.frame(1 / FPS, true); drawTicker(t, 0); drawEnd(t);
   console.log('reel: Habitt total in the home Rs ' + TOTAL.toLocaleString('en-US'));
