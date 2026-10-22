@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Playable Spaces brand kit</title>
+<!-- Profile picture options and highlight covers for @playablespaces, drawn in code in Anas's locked brand
+     (Guidelines/locked_brand_guidelines.md). tools/export-brand.mjs renders every [data-export] element to brand/out/<id>.png -->
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;1,6..72,800&family=Montserrat:ital,wght@0,800;1,800&family=Inter:wght@600;700&display=swap" rel="stylesheet">
+<style>
+  :root { --paper: #EEE9D6; --ink: #1A1205; --green: #2D7A4F; --green-lt: #44B977; --orange: #D94F00; --white: #FFFEFA; }
+  body { margin: 0; padding: 40px; background: #2a2418; font-family: Inter, sans-serif; color: #eee; display: flex; flex-wrap: wrap; gap: 40px; align-items: flex-start; }
+  figure { margin: 0; display: flex; flex-direction: column; gap: 10px; align-items: center; }
+  figcaption { font: 600 14px Inter; }
+  .art { width: 1080px; height: 1080px; transform-origin: 0 0; }
+  .wrap { width: 360px; height: 360px; overflow: hidden; border-radius: 50%; }
+  .wrap .art { transform: scale(.3333); }
+</style>
+</head>
+<body>
+<script>
+// ---- shared pieces ----
+const paperBg = id => `
+  <defs>
+    <radialGradient id="glow${id}" cx="50%" cy="44%" r="62%"><stop offset="0" stop-color="#F7F5EC"/><stop offset=".62" stop-color="#EEE9D6"/><stop offset="1" stop-color="#DED3AE"/></radialGradient>
+    <pattern id="grid${id}" width="62" height="62" patternUnits="userSpaceOnUse"><path d="M62 0H0V62" fill="none" stroke="rgba(214,200,155,.32)" stroke-width="2"/></pattern>
+    <filter id="soft${id}" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="22"/></filter>
+    <filter id="blur${id}" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="40"/></filter>
+  </defs>
+  <rect width="1080" height="1080" fill="url(#glow${id})"/><rect width="1080" height="1080" fill="url(#grid${id})"/>`;
+
+// isometric projection around a centre: x right, z toward the viewer, y up (units are px in plan)
+const C = 0.866, S = 0.5;
+const iso = (x, y, z, ox = 540, oy = 560) => [ox + (x - z) * C, oy + (x + z) * S - y];
+const poly = (pts, fill, extra = '') => `<polygon points="${pts.map(p => p.join(',')).join(' ')}" fill="${fill}" ${extra}/>`;
+// a box: x0..x1, z0..z1, height h from base y0; three visible faces (top, front +z, right +x)
+function box(x0, x1, z0, z1, y0, h, top, front, side, o) {
+  const P = (x, y, z) => iso(x, y, z, o?.ox, o?.oy);
+  return poly([P(x0, y0 + h, z0), P(x1, y0 + h, z0), P(x1, y0 + h, z1), P(x0, y0 + h, z1)], top)
+    + poly([P(x0, y0, z1), P(x1, y0, z1), P(x1, y0 + h, z1), P(x0, y0 + h, z1)], front)
+    + poly([P(x1, y0, z0), P(x1, y0, z1), P(x1, y0 + h, z1), P(x1, y0 + h, z0)], side);
+}
+
+// the cutaway room: a plinth, a floor, two tall walls at the back, a green sofa, a rug, a lamp with an orange glow
+function room(o = {}) {
+  const s = o.s || 1, ox = o.ox || 540, oy = o.oy || 600, Q = (x, y, z) => iso(x * s, y * s, z * s, ox, oy), q = (x, y, z) => Q(x, y, z).join(',');
+  const B = (x0, x1, z0, z1, y0, h, t, f, sd) => box(x0 * s, x1 * s, z0 * s, z1 * s, y0 * s, h * s, t, f, sd, { ox, oy });
+  const W = 250, D = 250;
+  let g = '';
+  g += `<ellipse cx="${ox}" cy="${oy + 250 * s}" rx="${430 * s}" ry="${120 * s}" fill="#5a4a1f" opacity=".28" filter="url(#soft${o.id})"/>`;
+  g += B(-W - 22, W + 22, -D - 22, D + 22, -150, 150, '#E6DCC0', '#1A1205', '#2a2010');             // plinth
+  g += B(-W, W, -D, D, 0, 10, '#C9A97A', '#a98a5e', '#94784f');                                     // floor
+  g += B(-W, W, -D, -D + 24, 10, 300, '#FFFEFA', '#DCC89A', '#C2AE80');                              // back wall
+  g += B(-W, -W + 24, -D, D, 10, 300, '#FFFEFA', '#E9DCB8', '#CFBA8A');                              // left wall
+  g += poly([Q(-W + 18, 160, -D + 18), Q(-W + 18, 260, -D + 18), Q(-W + 18, 260, -D + 120), Q(-W + 18, 160, -D + 120)].map(p => [p[0] + 0, p[1]]), '#9fc6dd', 'opacity=".9"'); // window on left wall
+  g += poly([Q(-60, 12, -60), Q(150, 12, -60), Q(150, 12, 130), Q(-60, 12, 130)], '#D94F00', 'opacity=".85"');   // rug
+  g += B(-150, 120, -D + 30, -D + 120, 10, 70, '#44B977', '#2B744A', '#318455');                    // sofa seat
+  g += B(-150, 120, -D + 30, -D + 60, 80, 70, '#389761', '#2B744A', '#2B744A');                     // sofa back
+  g += B(-20, 70, 0, 70, 10, 45, '#7a5a36', '#5e4426', '#4e3820');                                  // coffee table
+  // floor lamp with a warm glow
+  const [lx, ly] = Q(170, 0, -D + 60), [hx, hy] = Q(170, 230, -D + 60);
+  g += `<circle cx="${hx}" cy="${hy}" r="${120 * s}" fill="#FF7723" opacity=".45" filter="url(#blur${o.id})"/>`;
+  g += `<line x1="${lx}" y1="${ly}" x2="${hx}" y2="${hy}" stroke="#1A1205" stroke-width="${7 * s}" stroke-linecap="round"/>`;
+  g += `<ellipse cx="${hx}" cy="${hy}" rx="${30 * s}" ry="${20 * s}" fill="#D94F00"/>`;
+  // plant
+  const [px, py] = Q(-W + 60, 10, D - 60);
+  g += B(-W + 40, -W + 80, D - 80, D - 40, 10, 40, '#E6DCC0', '#cfc3a1', '#bfb28f');
+  for (const [dx, dy, r] of [[0, -95, 46], [-30, -70, 34], [30, -72, 36], [0, -140, 30]]) g += `<circle cx="${px + dx * s}" cy="${py + dy * s}" r="${r * s}" fill="#2D7A4F"/>`;
+  return g;
+}
+
+// ---- the three profile picture options ----
+const DP = {
+  'dp-a-monogram': `${paperBg('a')}
+    <ellipse cx="540" cy="760" rx="300" ry="70" fill="#5a4a1f" opacity=".2" filter="url(#softa)"/>
+    <text x="470" y="700" text-anchor="middle" font-family="Newsreader" font-style="italic" font-weight="800" font-size="620" fill="#1A1205">P</text>
+    <text x="660" y="700" text-anchor="middle" font-family="Montserrat" font-weight="800" font-size="470" fill="#2D7A4F" opacity=".96">S</text>`,
+  'dp-b-room': `${paperBg('b')}${room({ id: 'b', s: 1.05, oy: 590 })}`,
+  'dp-c-wordmark': `${paperBg('c')}${room({ id: 'c', s: .62, oy: 420 })}
+    <text x="540" y="770" text-anchor="middle" font-family="Newsreader" font-style="italic" font-weight="800" font-size="120" fill="#1A1205">Playable</text>
+    <text x="540" y="885" text-anchor="middle" font-family="Montserrat" font-weight="800" font-size="118" fill="#2D7A4F" letter-spacing="-2">SPACES</text>`,
+};
+
+// ---- highlight covers: ink line icons on paper with one green or orange accent ----
+const ln = 'fill="none" stroke="#1A1205" stroke-width="34" stroke-linecap="round" stroke-linejoin="round"';
+const HL = {
+  'hl-spaces': `${paperBg('h1')}${room({ id: 'h1', s: .82, oy: 560 })}`,
+  'hl-play': `${paperBg('h2')}
+    <circle cx="540" cy="540" r="250" fill="#44B977" opacity=".22"/>
+    <path d="M470 330v300l70-60 55 120 60-28-55-118 92-6z" ${ln} fill="#FFFEFA"/>`,
+  'hl-prices': `${paperBg('h3')}
+    <path d="M330 330h230l220 220-230 230-220-220z" ${ln} fill="#FFFEFA"/>
+    <circle cx="420" cy="420" r="34" fill="#D94F00"/>
+    <text x="575" y="625" text-anchor="middle" font-family="Montserrat" font-weight="800" font-size="150" fill="#2D7A4F" transform="rotate(45 575 575)">Rs</text>`,
+  'hl-custom': `${paperBg('h4')}
+    <rect x="290" y="560" width="500" height="150" rx="22" ${ln} fill="#FFFEFA"/>
+    <path d="M370 560v60M450 560v40M530 560v60M610 560v40M690 560v60" ${ln}/>
+    <path d="M610 230l120 120-210 210H400V440z" ${ln} fill="#44B977"/>`,
+};
+
+for (const [id, svg] of Object.entries({ ...DP, ...HL })) {
+  document.body.insertAdjacentHTML('beforeend', `<figure><div class="wrap"><svg class="art" data-export="${id}" viewBox="0 0 1080 1080" xmlns="http://www.w3.org/2000/svg">${svg}</svg></div><figcaption>${id}</figcaption></figure>`);
+}
+</script>
+</body>
+</html>
