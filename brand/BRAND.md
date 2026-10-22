@@ -37,3 +37,18 @@ Name the highlights in Instagram; the covers carry no words.
 4. Messages: message requests from everyone, so brands and buyers land in Requests, not nowhere. Saved reply with the shortcut `play` that pastes the link DM from rooms/<space>/post.md.
 5. Every reel with the Gemini voice gets Instagram's AI label (Instagram names a reel narrated with a realistic AI voice as content that needs it).
 6. Same phone, no VPN, no follow or comment-to-DM apps that log into the account.
+
+## Warm-up follows (verified 2026-10-22 against each brand's own website)
+
+No follows on days 1 to 3. Then follow by hand, spread across the day, never more than about 5 in an hour.
+
+| Day | Follow |
+|---|---|
+| 4 | @habitthomestore, @interwoodmobel, @chenoneofficial, @splinetool |
+| 5 | @mastermoltyfoam, @thekollekt, @aenzay_official, @planner5d |
+| 6 | @diamondsupremefoam, @archicubes, @westelm, @blender.official |
+| 7 | @spacesnplaces, @galleriadesigns.com.pk, @article, @lusionltd |
+| 8 | @mavricspace.design, @zameenpk, @graanacom, @ikeasaudiarabia, @ikeausa, @potterybarn, @homestyler.3dfloorplan, @coohom, @floorplanner, @mujieurope |
+| 9 | @wayfair, @cb2, @habitatuk, @ikeacanada, @interwoodcorporate, @masterceleste, @sapphirepakistan, @nishatlinen, @gulahmedfashion, @khaadi |
+
+Day 9's last four are clothing brands with home lines, the weakest fit; skip them if you like. Source list with the verifying URL for each: the research report saved with this session (2026-10-22).
