@@ -28,3 +28,12 @@ Name the highlights in Instagram; the covers carry no words.
 1. Every reel cover is the whole home on its plinth, from the hook's last frame (furniture landed, ticker done), so the grid reads as a row of little homes.
 2. One line of title on the cover, in the wordmark style: Newsreader italic for the lead, Montserrat green for the brand name, e.g. *Habitt* **HOME**.
 3. Captions in the reels use the locked brand: Newsreader heavy italic, key words in orange.
+
+## Account settings (@playablespaces, set up 2026-10-22)
+
+1. Security: two-factor authentication on (Accounts Centre, Password and security), with an authenticator app or SMS.
+2. Professional account: Creator, category Digital creator, category shown on the profile. Contact: an email, shown, so brands can reach it.
+3. Privacy: public. Mentions, tags, comments and remixes open to everyone. Comment filter (hide offensive comments) on.
+4. Messages: message requests from everyone, so brands and buyers land in Requests, not nowhere. Saved reply with the shortcut `play` that pastes the link DM from rooms/<space>/post.md.
+5. Every reel with the Gemini voice gets Instagram's AI label (Instagram names a reel narrated with a realistic AI voice as content that needs it).
+6. Same phone, no VPN, no follow or comment-to-DM apps that log into the account.
