@@ -74,13 +74,11 @@ Not sponsored by Habitt.
 Where: Instagram DM to @habitthomestore (the account the reel tags). One message only, no follow ups (Anas's rule for brand messages, 2026-10-22).
 
 ```
-Salam Habitt team! I built a 3D home out of your catalogue that anyone can play with in their browser: the Billy sofa, the Marq bed, the Hendrick table and six more of your pieces, each with its real price, its real colours, and a Buy button that opens its page on habitt.com.
+Salam Habitt team! I built a 3D home from your catalogue that anyone can play with in the browser. Every piece has its real price and colours, and each Buy button opens its page on habitt.com.
 
-People can move the sofa, try it in Light Green, and see the room at night before they order. Every click to your site is tagged utm_source=playablespaces, so you can see the visits in your own analytics.
+https://playablespaces.vercel.app/habitt-studio
 
-Here it is: https://playablespaces.vercel.app/habitt-studio
-
-I posted the reel this week and tagged you. Who on your team looks after online sales, so I can show it to them?
+Who on your team looks after online sales? I'd like to show it to them.
 ```
 
-Angle: a finished thing built from their own products, with a detail only their team can check (the UTM tag in their analytics), then one small question that finds the person who could buy a showroom. No price, no pitch, no follow up.
+Angle: a finished thing built from their own products and one small question that finds the person who could buy a showroom. No price, no pitch, no follow up. Shortened on Anas's ask ("concise") from a 657 character draft that also named three pieces and the UTM tag.
