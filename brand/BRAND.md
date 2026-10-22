@@ -8,9 +8,9 @@ Everything here is drawn in code in `brand/kit.html` and exported by `node tools
 
 | File | What it is | At phone size (about 56 px) |
 |---|---|---|
-| `dp-b-room.png` | A small cutaway room on a dark plinth: green sofa, orange rug, a lamp glowing, a plant, a window. It is the product in one picture. | Reads as a little room. **Chosen by Anas 2026-10-22** (copy: `profile-picture.png`). |
+| `dp-b-room.png` | A small cutaway room on a dark plinth: green sofa, orange rug, a lamp glowing, a plant, a window. It is the product in one picture. | Reads as a little room. Chosen first, then swapped. |
 | `dp-a-monogram.png` | "PS": the P in Newsreader italic ink, the S in Montserrat green. | Clean, but says nothing about rooms. |
-| `dp-c-wordmark.png` | The room above the full wordmark. | The words are too small to read in the circle. |
+| `dp-c-wordmark.png` | The room above the full wordmark. | The words are small in the circle. **In use since 2026-10-22, Anas's pick "for now"** (copy: `profile-picture.png`). |
 
 ## Highlight covers
 
