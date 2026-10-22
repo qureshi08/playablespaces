@@ -17,9 +17,11 @@ http.createServer((req, res) => {
     });
     return;
   }
-  // clean space links: /<room id> serves the app, the same as the rewrite in vercel.json
+  // clean space links: /<room id> serves that space's page (pages/<id>.html, with its link preview tags), the same as
+  // the rewrite in vercel.json; a space whose page is not built yet falls back to the plain app
   const slug = url.match(/^\/([a-z0-9-]+)\/?$/);
-  let p = slug && fs.existsSync(path.join(ROOT, 'rooms', slug[1], 'room.js')) ? path.join(ROOT, 'space.html') : path.join(ROOT, url);
+  const built = slug && path.join(ROOT, 'pages', slug[1] + '.html');
+  let p = slug && fs.existsSync(path.join(ROOT, 'rooms', slug[1], 'room.js')) ? (fs.existsSync(built) ? built : path.join(ROOT, 'space.html')) : path.join(ROOT, url);
   if (p.endsWith(path.sep)) p = path.join(p, 'index.html');
   if (!p.startsWith(ROOT) || !fs.existsSync(p) || fs.statSync(p).isDirectory()) { res.writeHead(404); return res.end(); }
   res.writeHead(200, { 'Content-Type': types[path.extname(p)] || 'application/octet-stream', 'Cache-Control': 'no-store' });

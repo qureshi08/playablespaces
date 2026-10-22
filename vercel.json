@@ -1,5 +1,5 @@
 {
   "rewrites": [
-    { "source": "/:room([a-z0-9-]+)", "destination": "/space.html" }
+    { "source": "/:room([a-z0-9-]+)", "destination": "/pages/:room.html" }
   ]
 }

@@ -59,6 +59,10 @@ Check a new product alone on `kit/turntable.html?id=<id>&yaw=30&pitch=8` (add `&
 
 `addProduct` turns `dims` into the footprint and height the kit uses for snapping and collisions. Product ids are appended to `PIECE_ORDER`, which share links also depend on, so ids are never removed or reordered.
 
+## Link previews
+
+A shared link shows the space's own preview (WhatsApp, Instagram, X read the HTML tags and never run the app). After adding a space to `rooms/spaces.json` or changing `space.html`, run `node tools/build-pages.mjs`: it writes `pages/<id>.html` (the app with that space's title and preview tags) and `rooms/<id>/og.jpg` (1200 x 630, from `share.image` in spaces.json, else a crop of the cover). `/<id>` is served from `pages/<id>.html` (vercel.json and serve.js), so a space without a built page 404s on Vercel: always rebuild before pushing a new space. Render `share.image` as a wide dusk shot of the whole home with no sun path.
+
 ## Promo reels
 
 `kit/reel.js` is the reel script (camera path, captions, touch marks, events and sounds), written for the Habitt space; copy it per space and change the pieces, keys and captions. Watch it at `kit/reel-preview.html?room=<id>` (tap to play, 9:16). Record with `node tools/record-reel.mjs <id>` while `node serve.js` runs: 1080 x 1920 at 30 fps to `_reels/<id>/final.mp4`; `--stills 1,4.5,9` renders stills only. All of it stays off Vercel.

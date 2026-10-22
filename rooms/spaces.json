@@ -3,8 +3,13 @@
     "id": "habitt-studio",
     "store": "Habitt",
     "title": "Small flat",
-    "facts": ["9 real Habitt pieces", "Rs 252,391 for the whole room", "Habitt delivers in Pakistan"],
+    "facts": ["9 real Habitt pieces", "Rs 287,841 for everything in it", "Habitt delivers in Pakistan"],
     "checked": "2026-10-22",
-    "cover": "rooms/habitt-studio/cover.jpg"
+    "cover": "rooms/habitt-studio/cover.jpg",
+    "share": {
+      "image": "rooms/habitt-studio/share.jpg",
+      "title": "A home you can play with, built from real Habitt furniture",
+      "description": "Move any piece, change its colours, see it from morning to night, then buy it on habitt.com. Real prices, checked 22 Oct 2026."
+    }
   }
 ]
