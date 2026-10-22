@@ -1,14 +1,19 @@
 {
-  "title": "Playable Spaces: Habitt first home ad v4",
+  "title": "Playable Spaces: Habitt home ad v5",
   "style": "native",
   "lead": 0.15,
-  "tailPad": 1.6,
+  "tailPad": 2.2,
   "lines": [
-    {"text": "You're furnishing your first home, and every piece costs real money."},
-    {"text": "Every sofa looks perfect in the photo, but once it's delivered, you live with it."},
-    {"text": "So try it here first."},
-    {"text": "Move it across the room, try it in green, and see how it looks at night."},
-    {"text": "When it finally feels like home, tap the real price and buy it from Habitt."},
-    {"text": "Comment PLAY and I'll send you the link."}
+    {"text": "I built a home you can actually play with."},
+    {"text": "Every piece is real Habitt furniture, with its real price."},
+    {"text": "I made it because buying furniture from a photo is a gamble, and once it's delivered, you live with it."},
+    {"text": "Here, you try everything first."},
+    {"text": "Move any piece, and change its colours."},
+    {"text": "Restyle the whole home in one tap."},
+    {"text": "See it in the morning, or late at night."},
+    {"text": "When it feels right, buy it straight from Habitt's website."},
+    {"text": "It's called Playable Spaces."},
+    {"text": "Comment PLAY and I'll send you the link."},
+    {"text": "And if you sell furniture, I can build your store next."}
   ]
 }
