@@ -16,7 +16,7 @@ const easeIn = x => Math.pow(clamp01(x), 3);
 const easeIO = x => { x = clamp01(x); return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; };
 
 // ---- samples: fetched once, decoded per audio context, trimmed to their first sound ----
-const SAMPLES = ['sack_flour', 'crate_box', 'paper_slide', 'page_flip', 'clink', 'clink2', 'tv_button', 'pop_soft', 'pop_clean', 'whoosh_airy', 'whoosh_slow', 'whoosh_thin', 'shimmer', 'stamp', 'mug_clanks'];
+const SAMPLES = ['sack_flour', 'crate_box', 'paper_slide', 'page_flip', 'clink', 'clink2', 'tv_button', 'pop_soft', 'pop_clean', 'whoosh_airy', 'whoosh_slow', 'whoosh_thin', 'stamp', 'mug_clanks'];
 const raw = {};
 async function fetchSamples() { await Promise.all(SAMPLES.map(async n => { raw[n] = await (await fetch(`/_reels/sfx/${n}.mp3`)).arrayBuffer(); })); }
 async function decodeAll(ac) {
@@ -148,7 +148,7 @@ export async function start(A) {
   const SFX = [];
   for (const [t, it] of LAND) for (const [s, g, r] of soundFor(it)) SFX.push([t, s, { gain: g, rate: r * (0.97 + Math.random() * 0.06), pan: Math.max(-0.4, Math.min(0.4, it.x / 10)) }]);
   lamps.forEach((it, i) => SFX.push([tLights + i * (E / 2), 'tv_button', { gain: 0.7, rate: 1 + i * 0.03 }]));
-  SFX.push([tDive, 'whoosh_slow', { gain: 0.45 }], [tOut, 'shimmer', { gain: 0.35 }]);
+  SFX.push([tDive, 'whoosh_slow', { gain: 0.45 }]);   // no bell or chime on the end line, ever (Anas)
   for (const [t] of EXIT) SFX.push([t + 0.05, 'pop_clean', { gain: 0.22, rate: 1.1 + Math.random() * 0.3 }]);
   const TICKS = TOTAL_LANDS.map(([t]) => t + 0.02);
 
