@@ -82,3 +82,29 @@ Who on your team looks after online sales? I'd like to show it to them.
 ```
 
 Angle: a finished thing built from their own products and one small question that finds the person who could buy a showroom. No price, no pitch, no follow up. Shortened on Anas's ask ("concise") from a 657 character draft that also named three pieces and the UTM tag.
+
+## X showcase (2026-10-23): main post with the video, link and build details as replies
+
+Main post (attach `final.mp4`):
+```
+I built a home you can play with in your browser, from real Habitt furniture at real prices.
+
+Move any piece, change its colour, switch it from morning to night, and buy it straight from Habitt's site.
+
+Link below.
+```
+
+Reply 1:
+```
+Play it here: https://playablespaces.vercel.app/habitt-studio
+```
+
+Reply 2:
+```
+How it's made: three.js in the browser. Every piece is modelled from the dimensions on Habitt's own listings, the colours come from Sanzo Wada's A Dictionary of Color Combinations, and a collision check makes sure nothing overlaps. The video is the live page, recorded frame by frame in code.
+```
+
+Reply 3:
+```
+If you sell furniture, I can build your store as a playable space next. DMs are open.
+```
