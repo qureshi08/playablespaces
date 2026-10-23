@@ -1,8 +1,8 @@
 // "Build it in 20 seconds": a no-voice reel for a space (dev only, kept off the live site). Open /<room>?reel=build
 // (tap to play) or record it with: node tools/record-reel.mjs <room> --reel build  -> _reels/<room>/final-build.mp4
 // Everything sits on a 120 BPM grid (a beat every 0.5 s) so any 120 BPM track added in Instagram lands with it:
-// the empty home fills piece by piece on the eighth notes, the lamps click on, the camera dives into the living room,
-// cuts to the bedroom at night, then every piece pops back off and the reel ends on its first frame, so it loops.
+// the empty home fills piece by piece on the eighth notes, the lamps click on, the camera swings slowly round the
+// whole home, then every piece pops back off and the reel ends on its first frame, so it loops.
 // Sounds are real recordings from Pixabay (CreativeCoding/_sfx, copied to _reels/sfx), one per landing, by weight.
 
 const FPS = 30, BEAT = 0.5, E = BEAT / 2, T_END = 40 * BEAT;   // 20 s: build, lights, dive, bedroom, pop off, a beat of the empty home
@@ -74,12 +74,13 @@ export async function start(A) {
     [tDive + 2.5 * BEAT, [-0.45, 0.6, -0.45], -0.5, 0.38, 6.6], [tCut1, [-0.45, 0.6, -0.45], -0.62, 0.36, 6.0],   // (further round, the camera leaves the left wall)
   ];
   const lerp = (a, b, u) => a + (b - a) * u;
+  // the whole home stays in frame (Anas: no close ups): a slow turn while it fills, a wider swing the other way once
+  // the lamps are on, then back to the opening angle for the loop, all one continuous move with no cuts
+  const SWING = [[0, 0, 0.64, WD * 0.98], [tDive, 0.24, 0.6, WD * 0.86], [tCut2, -0.26, 0.58, WD * 0.88], [T_END - BEAT, 0, 0.64, WD * 0.98]];
   function camAt(t) {
-    if (t >= tCut2) { const u = easeIO((t - tCut2) / 2); return [[START[0][0], START[0][1], START[0][2]], 0, START[2], lerp(WD * 0.9, START[3], u)]; }
-    if (t >= tCut1) { const u = (t - tCut1) / (tCut2 - tCut1); return [[2.45, 0.75, -1.35], lerp(0.32, 0.1, u), 0.42, lerp(7.2, 6.6, u)]; }
-    let i = 0; while (i < KEYS.length - 2 && t > KEYS[i + 1][0]) i++;
-    const [t0, p0, y0, pi0, d0] = KEYS[i], [t1, p1, y1, pi1, d1] = KEYS[i + 1], u = i === 0 ? clamp01((t - t0) / (t1 - t0)) : easeIO((t - t0) / (t1 - t0));
-    return [p0.map((v, k) => lerp(v, p1[k], u)), lerp(y0, y1, u), lerp(pi0, pi1, u), lerp(d0, d1, u)];
+    let i = 0; while (i < SWING.length - 2 && t > SWING[i + 1][0]) i++;
+    const [t0, y0, p0, d0] = SWING[i], [t1, y1, p1, d1] = SWING[i + 1], u = i === 0 ? clamp01((t - t0) / (t1 - t0)) : easeIO((t - t0) / (t1 - t0));
+    return [START[0], lerp(y0, y1, u), lerp(p0, p1, u), lerp(d0, d1, u)];
   }
   const hourAt = t => t < tLights ? 16.4 : t < tOut + 3 * BEAT ? 16.4 + 2.8 * easeOut((t - tLights) / BEAT) : 19.2 - 2.8 * easeIO((t - tOut - 3 * BEAT) / (2 * BEAT));
 
@@ -147,7 +148,7 @@ export async function start(A) {
   const SFX = [];
   for (const [t, it] of LAND) for (const [s, g, r] of soundFor(it)) SFX.push([t, s, { gain: g, rate: r * (0.97 + Math.random() * 0.06), pan: Math.max(-0.4, Math.min(0.4, it.x / 10)) }]);
   lamps.forEach((it, i) => SFX.push([tLights + i * (E / 2), 'tv_button', { gain: 0.7, rate: 1 + i * 0.03 }]));
-  SFX.push([tDive, 'whoosh_slow', { gain: 0.6 }], [tCut1, 'whoosh_thin', { gain: 0.35, rate: 1.2 }], [tCut2, 'whoosh_airy', { gain: 0.45 }], [tOut, 'shimmer', { gain: 0.35 }]);
+  SFX.push([tDive, 'whoosh_slow', { gain: 0.45 }], [tOut, 'shimmer', { gain: 0.35 }]);
   for (const [t] of EXIT) SFX.push([t + 0.05, 'pop_clean', { gain: 0.22, rate: 1.1 + Math.random() * 0.3 }]);
   const TICKS = TOTAL_LANDS.map(([t]) => t + 0.02);
 
