@@ -1427,7 +1427,9 @@ if (new URLSearchParams(location.search).has('reel')) {
     wipe: (k, id) => { wipeSlot(k, MAT[id], new THREE.Vector3(0, 0.5, R.Z1), now); boardDirty = true; },
     setTime: h => { hAnim = null; H = hTarget = h; applyDaylight(H); }, toScreen, getNow: () => now,
     flat, itemsRoot, renderer, overlays: [arcLine, sunSprite, moonSprite] };
-  import('./reel.js').then(m => m.start(api));
+  // ?reel runs kit/reel.js; ?reel=<name> runs kit/reel-<name>.js (another reel for the same space)
+  const which = new URLSearchParams(location.search).get('reel');
+  import(which ? `./reel-${which.replace(/[^a-z0-9-]/g, '')}.js` : './reel.js').then(m => m.start(api));
 }
 
 // exposed for debugging in the console

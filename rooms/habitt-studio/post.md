@@ -108,3 +108,20 @@ Reply 3:
 ```
 If you sell furniture, I can build your store as a playable space next. DMs are open.
 ```
+
+## Reel 2: "Build it in 20 seconds" (no voice, music added in Instagram), 2026-10-23
+
+Video: `_reels/habitt-studio/final-build.mp4` (1080 x 1920, 20 s, loops, sound effects at -16 LUFS so the music sits on top). Every landing is on a 120 BPM grid.
+
+Music: in Instagram's audio search try "deep house", "nu disco" or "lofi house" and pick a track around 120 BPM with a steady beat from the first second. Start it at its first beat, keep the clip's original sound at about 50 percent and the music at about 70 percent.
+
+Caption:
+```
+Watch a home fill up with real Habitt furniture, one piece at a time.
+
+Every price is real, and every piece is one tap from Habitt's website. Move it, change its colour, see it at night.
+
+Play it yourself at the link in bio.
+
+#interiordesign #homedecor #furniture #pakistan #satisfying
+```

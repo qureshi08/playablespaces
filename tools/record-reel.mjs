@@ -11,7 +11,10 @@ const FF = require('@ffmpeg-installer/ffmpeg').path;
 
 const room = process.argv[2] || 'habitt-studio';
 const si = process.argv.indexOf('--stills'), stills = si > 0 ? process.argv[si + 1].split(',').map(Number) : null;
+// --reel <name> records kit/reel-<name>.js to final-<name>.mp4 (and its own loudness, quieter: music goes on top in the app)
+const ri = process.argv.indexOf('--reel'), reel = ri > 0 ? process.argv[ri + 1] : '';
 const out = path.join(HERE, '..', '_reels', room); fs.mkdirSync(out, { recursive: true });
+const FINAL = reel ? `final-${reel}.mp4` : 'final.mp4', LUFS = reel ? -18 : -14;
 
 const args = ['--ignore-gpu-blocklist', '--enable-gpu', '--use-angle=d3d11', '--autoplay-policy=no-user-gesture-required'];
 let browser;
@@ -21,7 +24,7 @@ const page = await browser.newPage();
 const errors = []; page.on('pageerror', e => errors.push(e.message)); page.on('console', m => m.type() === 'error' && errors.push(m.text()));
 // 432 x 768 CSS px at 2.5x = a 1080 x 1920 frame with the phone layout
 await page.setViewport({ width: 432, height: 768, deviceScaleFactor: 2.5 });
-await page.goto(`http://localhost:8091/${room}?reel&rec`, { waitUntil: 'networkidle0', timeout: 120000 });
+await page.goto(`http://localhost:8091/${room}?reel${reel ? "=" + reel : ""}&rec`, { waitUntil: 'networkidle0', timeout: 120000 });
 await page.waitForFunction(() => window.__reel, { timeout: 120000 });
 const fonts = await page.evaluate(async () => { await document.fonts.ready; return ['italic 800 20px Newsreader', '800 20px Montserrat', '600 14px Inter'].map(f => document.fonts.check(f)); });
 if (fonts.includes(false)) { console.error('fonts not loaded', fonts); process.exit(1); }
@@ -55,8 +58,8 @@ if (stills) {
   const wav = path.join(out, 'sound.wav');
   fs.writeFileSync(wav, Buffer.from(await page.evaluate(() => __reel.audio()), 'base64'));
   execFileSync(FF, ['-y', '-framerate', String(fps), '-i', path.join(dir, 'f%05d.jpg'), '-i', wav, '-c:v', 'libx264', '-preset', 'slow', '-crf', '17', '-pix_fmt', 'yuv420p',
-    '-af', 'loudnorm=I=-14:TP=-1.5:LRA=11', '-ar', '48000', '-c:a', 'aac', '-b:a', '192k', '-shortest', '-movflags', '+faststart', path.join(out, 'final.mp4')], { stdio: 'ignore' });
-  console.log('video ->', path.join(out, 'final.mp4'));
+    '-af', `loudnorm=I=${LUFS}:TP=-1.5:LRA=11`, '-ar', '48000', '-c:a', 'aac', '-b:a', '192k', '-shortest', '-movflags', '+faststart', path.join(out, FINAL)], { stdio: 'ignore' });
+  console.log('video ->', path.join(out, FINAL));
 }
 if (errors.length) console.log('page errors:\n' + errors.join('\n'));
 console.log(`done in ${((Date.now() - t0) / 1000).toFixed(0)} s`);
