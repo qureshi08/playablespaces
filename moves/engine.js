@@ -163,7 +163,7 @@ export async function run(app) {
     const n = e && e.name, m = e && e.message;
     if (m === 'NOAPI') return 'This browser cannot open the camera here. Open the link in Chrome, Safari or Edge, using the https address.';
     if (n === 'NotAllowedError' || n === 'SecurityError') return 'Camera permission is blocked. Click the camera icon in the address bar (on iPhone: Settings, Safari, Camera) and allow it, then press Start again.';
-    if (n === 'NotReadableError' || n === 'TrackStartError' || n === 'AbortError') return 'Windows says every camera is busy' + (E.camNames && E.camNames.length ? ' (tried: ' + E.camNames.join(', ') + ')' : '') + '. Windows lets only one program use a camera at a time, so a program like Zoom, Teams, OBS, Camo, Phone Link, the Camera app or another browser is holding it. Close it, or restart the computer, then press Start again. On your iPhone this does not happen.';
+    if (n === 'NotReadableError' || n === 'TrackStartError' || n === 'AbortError') return 'Windows says every camera is busy' + (E.camNames && E.camNames.length ? ' (tried: ' + E.camNames.join(', ') + ')' : '') + '. Check three things, then press Start again: 1. Windows Settings, Privacy and security, Camera: turn on "Let desktop apps access your camera". 2. A camera shutter slider above the screen, or a camera key on the keyboard (often F8 or F10), is not switched off. 3. No other program (Zoom, Teams, OBS, the Camera app) has the camera open. Test: if the Windows Camera app also shows nothing, the block is in Windows, not this page.';
     if (n === 'NotFoundError' || n === 'OverconstrainedError') return 'No camera was found on this device.';
     return 'Could not start: ' + (m || e) + '. Reload the page and press Start again.';
   }
