@@ -10,6 +10,16 @@ const MODELS = {
   face: MP + 'face_landmarker/face_landmarker/float16/1/face_landmarker.task',
   ball: MP + 'object_detector/efficientdet_lite0/float16/1/efficientdet_lite0.tflite',
 };
+export const BRAND = 'Moves';
+const NO_UNIT_SPACE = ['%'];
+export function fmtVal(v, unit = '') {
+  if (unit === 's') return v.toFixed(2) + ' s';
+  if (unit === '%' ) return Math.round(v) + '%';
+  if (unit === 'W') return Math.round(v).toLocaleString('en-US') + ' W';
+  if (['reps', 'touches', 'jumps', 'walls', 'dodged', 'level', 'jacks'].includes(unit)) return Math.round(v) + ' ' + unit;
+  if (unit === 'deg') return Math.round(v) + '°';
+  return (Math.abs(v) >= 100 ? Math.round(v) : Math.round(v * 10) / 10) + (NO_UNIT_SPACE.includes(unit) ? '' : ' ') + unit;
+}
 export const C = { paper: '#F5F0E6', card: '#FBF7EE', ind: '#243A7A', ink: '#1B2547', mad: '#C8452A', wi: '#9DB3E2', saf: '#F2B848', wm: '#E58A6B' };
 export const BONES = [[11,12],[11,13],[13,15],[12,14],[14,16],[11,23],[12,24],[23,24],[23,25],[25,27],[24,26],[26,28],[27,31],[28,32],[27,29],[28,30]];
 
@@ -102,7 +112,15 @@ export async function run(app) {
     app, S, save, U: 4, W: 720, H: 1280, P: null, Sm: null, Ps: [], F: null, B: {}, ball: null, t: 0, ppm: null,
     facing: S.facing || app.cam || 'environment', hookUntil: 0, msg: '', gateMode: 0, recording: false, say, beep, ME,
     now: () => performance.now() / 1000,
-    log: (v, unit, better) => logResult(app.id, v, unit, better),
+    log: (v, unit, better = 'high', rank) => {
+      logResult(app.id, v, unit, better);
+      // keep the result and a snapshot of this moment for the share card
+      E.result = { v, unit, better, rank };
+      // snapshot a moment later, so the photo shows the score on screen
+      setTimeout(() => { try { const s = document.createElement('canvas'), k = 540 / Math.max(cv.width, cv.height); s.width = Math.round(cv.width * k); s.height = Math.round(cv.height * k); s.getContext('2d').drawImage(cv, 0, 0, s.width, s.height); E.snap = s; } catch (e) {} }, 180);
+      shareBtn.style.display = '';
+      if (E.beat != null) { const won = better === 'low' ? v < E.beat : v > E.beat; if (won && !E.beatWon) { E.beatWon = true; setTimeout(() => say('You beat the challenge!'), 1200); } }
+    },
     toast(s, ms = 1800) { const el = $('#toast'); el.textContent = s; el.classList.add('on'); clearTimeout(el._t); el._t = setTimeout(() => el.classList.remove('on'), ms); },
     m(px) { return E.ppm ? px / E.ppm : null; }, // pixels to metres, once the app has seen you standing
   };
@@ -121,7 +139,7 @@ export async function run(app) {
       : `<span>${s.label}</span><input data-k="${s.k}" type="number" inputmode="decimal" value="${S[s.k]}">`;
     form.appendChild(lab);
   });
-  form.addEventListener('change', e => { const k = e.target.dataset.k; if (k) { S[k] = Number(e.target.value); save(); app.reset && app.reset(E); } });
+  form.addEventListener('change', e => { const k = e.target.dataset.k; if (k) { const v = e.target.value; S[k] = isNaN(+v) ? v : +v; save(); app.reset && app.reset(E); } });
   document.title = app.title + ' · Moves';
   if (app.noCamera) { $('#startState').textContent = 'No camera needed. Turn the sound on.'; }
 
@@ -140,6 +158,35 @@ export async function run(app) {
   (app.buttons || (app.action ? [app.action] : [])).forEach(b => addBtn(b.label, () => b.fn.call(app, E), 'go'));
   addBtn('Reset', () => { app.reset && app.reset(E); E.toast('Reset'); }, '');
   const recBtn = addBtn('● Rec', () => toggleRec(), 'rec');
+  const shareBtn = addBtn('Share score', () => shareCard(), 'go'); shareBtn.style.display = 'none';
+
+  /* challenge links: ?a=<app>&beat=<score>&u=<unit> */
+  if (params.get('beat') != null && !isNaN(+params.get('beat'))) {
+    E.beat = +params.get('beat'); E.beatUnit = params.get('u') || '';
+    const ch = document.createElement('p'); ch.className = 'challenge'; ch.textContent = 'Challenge: beat ' + fmtVal(E.beat, E.beatUnit); $('#hook').after(ch);
+  }
+
+  /* share card: a 9:16 image for Stories with the score, a photo of the moment and a challenge link */
+  async function shareCard() {
+    const r = E.result; if (!r) return;
+    const link = location.origin + location.pathname + '?a=' + app.id + '&beat=' + (Math.round(r.v * 100) / 100) + '&u=' + encodeURIComponent(r.unit || '');
+    const W = 1080, H = 1920, c = document.createElement('canvas'); c.width = W; c.height = H; const x = c.getContext('2d'), F = { U: 10.8, W, H };
+    x.fillStyle = C.paper; x.fillRect(0, 0, W, H);
+    text(x, F, BRAND, W / 2, 120, 7, C.ind); text(x, F, app.title, W / 2, 210, 6, C.ink, 700);
+    if (E.snap) { const s = E.snap, k = Math.min(860 / s.width, 900 / s.height), w = s.width * k, h = s.height * k; x.save(); x.beginPath(); x.roundRect((W - w) / 2, 290, w, h, 40); x.clip(); x.drawImage(s, (W - w) / 2, 290, w, h); x.restore(); x.lineWidth = 8; x.strokeStyle = C.ind; x.beginPath(); x.roundRect((W - w) / 2, 290, w, h, 40); x.stroke(); }
+    text(x, F, fmtVal(r.v, r.unit), W / 2, 1330, 17, C.mad);
+    let y = 1430;
+    if (r.rank) wrap(x, F, r.rank, 4.4, W * 0.86).forEach(l => { text(x, F, l, W / 2, y, 4.4, C.ind, 800); y += 58; });
+    y += 30; wrap(x, F, '“' + app.hook + '”', 4.6, W * 0.84).slice(0, 2).forEach(l => { text(x, F, l, W / 2, y, 4.6, C.ink, 700); y += 60; });
+    text(x, F, 'Beat me. Free, no app to install:', W / 2, 1700, 4.2, C.ink, 600);
+    text(x, F, location.host + location.pathname.replace(/app\.html$/, ''), W / 2, 1770, 4.4, C.ind, 800);
+    const blob = await new Promise(res => c.toBlob(res, 'image/png'));
+    const file = new File([blob], app.id + '-score.png', { type: 'image/png' });
+    const msg = `${app.title}: ${fmtVal(r.v, r.unit)}. Beat me: ${link}`;
+    try { if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], text: msg }); return; } } catch (e) { if (e.name === 'AbortError') return; }
+    try { await navigator.clipboard.writeText(msg); E.toast('Challenge link copied. The image is downloading.', 3000); } catch (e) {}
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = file.name; a.click();
+  }
 
   /* taps: set lines or spots, otherwise the app gets the tap */
   cv.addEventListener('pointerdown', e => {
@@ -259,7 +306,7 @@ export async function run(app) {
         if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; }
         E.W = W; E.H = H; E.U = Math.min(W, H) / 100;
         const ts = Math.max(performance.now(), lastTs + 1); lastTs = ts;
-        E.t = (now || performance.now()) / 1000;
+        const tNow = (now || performance.now()) / 1000; if (E.t && tNow > E.t) { const f = 1 / (tNow - E.t); if (f < 240) E.fps = E.fps ? E.fps * 0.95 + f * 0.05 : f; } E.t = tNow;
         const mirror = E.facing === 'user' && !app.noCamera;
         const px = p => ({ x: (mirror ? 1 - p.x : p.x) * W, y: p.y * H, v: p.visibility ?? 1 });
         if (m.pose) {
@@ -314,6 +361,7 @@ export async function run(app) {
     if (app.points && S.pts && S.pts.length) S.pts.forEach((p, i) => { g.strokeStyle = C.mad; g.lineWidth = U * 0.7; g.beginPath(); g.arc(p.x * W, p.y * H, U * 5, 0, 7); g.stroke(); text(g, E, app.pointLabels[i], p.x * W, p.y * H - U * 8, 3.4, C.mad); });
     if (app.points && (!S.pts || S.pts.length < app.points) && !E.gateMode) card(g, E, [['Press Set spot,', 4, C.ink], ['then tap the ' + app.pointNames[0], 3.4, C.ink, 500]], W / 2, H * 0.4);
     try { app.draw && app.draw(g, E); } catch (e) { console.error(e); }
+    if (E.beat != null) card(g, E, [[E.beatWon ? 'Challenge beaten ✓' : 'Beat ' + fmtVal(E.beat, E.beatUnit), 4.2, E.beatWon ? C.ind : C.mad]], W - U * 4, H * 0.2, 'right');
     if (E.msg) card(g, E, wrap(g, E, E.msg, 3.6, W * 0.85).map(l => [l, 3.6, C.ink, 600]), W / 2, H * 0.86);
     if (E.now() < E.hookUntil) { const lines = wrap(g, E, app.hook, 6.4, W * 0.84); card(g, E, lines.map(l => [l, 6.4, C.mad]), W / 2, H * 0.1); }
     text(g, E, 'Anas Qureshi', W - U * 3, H - U * 3, 3.2, C.mad, 700, 'right');

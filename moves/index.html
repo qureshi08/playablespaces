@@ -16,17 +16,22 @@
   <h1>Moves</h1>
   <p class="sig">Anas Qureshi · <span id="count">50</span> training apps</p>
   <div class="list" id="list"></div>
+  <p class="note">Free. No sign up. Video never leaves your phone: tracking runs on your device.</p>
   <div class="tip"><b>On iPhone:</b> tap Share, then Add to Home Screen, so Moves opens like an app. Put the phone on a tripod, press Rec, then train. The hook shows on screen for the first seconds of every video.</div>
 </div>
 <script type="module">
 import { ALL, CATS } from './all.js';
 const apps = Object.values(ALL);
 document.getElementById('count').textContent = apps.length;
-document.getElementById('list').innerHTML = CATS.map(cat => {
-  const inCat = apps.filter(a => a.cat === cat); if (!inCat.length) return '';
-  return `<h3 class="cat">${cat}</h3>` + inCat.map(a =>
-    `<a class="app" href="app.html?a=${a.id}"><h2>${a.title}</h2><p class="hook">“${a.hook}”</p><p>${a.setup[0]}</p></a>`).join('');
-}).join('');
+const tile = a => `<a class="app" href="app.html?a=${a.id}"><h2>${a.title}${a.beta ? ' <span class="beta">beta</span>' : ''}</h2><p class="hook">“${a.hook}”</p><p>${a.setup[0]}</p></a>`;
+const FEATURED = ['vjump', 'pullup', 'ghost', 'balance', 'reaction', 'pushup'];
+document.getElementById('list').innerHTML =
+  `<h3 class="cat">Start here</h3><p class="note">The six most accurate tests. Three rank you against other people, and one races you against Usain Bolt.</p>` + FEATURED.map(id => tile(ALL[id])).join('') +
+  CATS.map(cat => {
+    const inCat = apps.filter(a => a.cat === cat && !FEATURED.includes(a.id)); if (!inCat.length) return '';
+    return `<h3 class="cat">${cat}</h3>` + inCat.map(tile).join('');
+  }).join('') +
+  `<p class="note">Tests marked beta are rougher: a phone camera at 30 frames a second cannot time them as precisely.</p>`;
 </script>
 </body>
 </html>

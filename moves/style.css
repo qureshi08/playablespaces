@@ -16,6 +16,10 @@ button.rec.on{background:var(--mad);color:#fff}
 .app h2{margin:0;color:var(--ind);font-size:23px}
 .app .hook{color:var(--mad);font-weight:700;margin:4px 0}
 .app p{margin:0;font-size:15px}
+.privacy{font-size:14px;color:#4a5376;margin:14px 0 0;padding-left:26px;background:no-repeat left 2px/18px url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23243A7A' stroke-width='2'%3E%3Crect x='5' y='11' width='14' height='10' rx='2'/%3E%3Cpath d='M8 11V7a4 4 0 0 1 8 0v4'/%3E%3C/svg%3E")}
+.challenge{font-family:'Shantell Sans',cursive;font-weight:800;color:#fff;background:var(--mad);display:inline-block;padding:6px 14px;border-radius:14px 10px 16px 9px;margin:0 0 14px}
+.beta{font-size:12px;vertical-align:middle;background:var(--saf);color:var(--ink);padding:2px 8px;border-radius:8px;font-weight:700}
+.note{font-size:14px;color:#4a5376;margin:4px 0 10px}
 .cat{font-family:'Shantell Sans',cursive;color:var(--mad);font-size:22px;margin:18px 0 0}
 .tip{margin-top:22px;font-size:15px;background:rgba(242,184,72,.25);border-radius:14px;padding:12px 14px}
 /* app screen */
