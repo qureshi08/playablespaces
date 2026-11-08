@@ -128,8 +128,29 @@ export async function run(app) {
   async function openCamera() {
     if (video.srcObject) video.srcObject.getTracks().forEach(t => t.stop());
     if (params.get('video')) { video.srcObject = null; video.src = params.get('video'); video.loop = true; E.facing = 'environment'; await video.play(); return; }
-    const st = await navigator.mediaDevices.getUserMedia({ audio: false, video: { facingMode: E.facing, width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 60 } } });
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) throw new Error('NOAPI');
+    // try the best settings first, then simpler ones (some laptop webcams refuse 60 fps or HD)
+    const tries = [
+      { facingMode: E.facing, width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 60 } },
+      { facingMode: E.facing },
+      true,
+    ];
+    let st = null, err = null;
+    for (const v of tries) { try { st = await navigator.mediaDevices.getUserMedia({ audio: false, video: v }); break; } catch (e) { err = e; if (e.name === 'NotAllowedError' || e.name === 'SecurityError') break; } }
+    if (!st) throw err;
+    // a laptop webcam faces you even when we asked for the back camera: mirror it like a selfie
+    const fm = st.getVideoTracks()[0]?.getSettings?.().facingMode;
+    if (fm) E.facing = fm === 'environment' ? 'environment' : 'user';
+    else if (!/iPhone|iPad|Android/i.test(navigator.userAgent)) E.facing = 'user';
     video.srcObject = st; await video.play();
+  }
+  function cameraError(e) {
+    const n = e && e.name, m = e && e.message;
+    if (m === 'NOAPI') return 'This browser cannot open the camera here. Open the link in Chrome, Safari or Edge, using the https address.';
+    if (n === 'NotAllowedError' || n === 'SecurityError') return 'Camera permission is blocked. Click the camera icon in the address bar (on iPhone: Settings, Safari, Camera) and allow it, then press Start again.';
+    if (n === 'NotReadableError' || n === 'TrackStartError' || n === 'AbortError') return 'Another app or tab is using the camera (Zoom, Teams, Meet, the Camera app or another tab). Close it, then press Start again.';
+    if (n === 'NotFoundError' || n === 'OverconstrainedError') return 'No camera was found on this device.';
+    return 'Could not start: ' + (m || e) + '. Reload the page and press Start again.';
   }
   async function loadPose() {
     const files = await FilesetResolver.forVisionTasks(V + '/wasm');
@@ -173,7 +194,7 @@ export async function run(app) {
       $('#intro').classList.add('off');
       E.hookUntil = E.now() + 2.8;
       loop(pose);
-    } catch (e) { st.textContent = 'Could not start: ' + (e && e.message ? e.message : e) + '. Allow the camera in Safari settings and reload.'; }
+    } catch (e) { st.textContent = (e && e.name) ? cameraError(e) : 'Could not load the body tracker. Check the internet connection and press Start again.'; }
   };
 
   /* main loop */
