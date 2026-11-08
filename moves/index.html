@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Moves">
+<meta name="theme-color" content="#F5F0E6">
+<title>Moves</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Shantell+Sans:wght@500;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="wrap">
+  <h1>Moves</h1>
+  <p class="sig">Anas Qureshi</p>
+  <div class="list" id="list"></div>
+  <div class="tip"><b>On iPhone:</b> tap Share, then Add to Home Screen, so Moves opens like an app. Put the phone on a tripod, press Rec, then train. The hook shows on screen for the first seconds of every video.</div>
+</div>
+<script type="module">
+import { APPS } from './apps.js';
+document.getElementById('list').innerHTML = Object.values(APPS).map(a =>
+  `<a class="app" href="app.html?a=${a.id}"><h2>${a.title}</h2><p class="hook">“${a.hook}”</p><p>${a.setup[0]}</p></a>`).join('');
+</script>
+</body>
+</html>
