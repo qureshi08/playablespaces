@@ -107,7 +107,13 @@ export async function run(app) {
   const bar = $('#bar');
   const addBtn = (label, fn, cls = '') => { const b = document.createElement('button'); b.textContent = label; b.className = cls; b.onclick = fn; bar.appendChild(b); return b; };
   addBtn('←', () => { location.href = './'; }, 'icon');
-  addBtn('Flip', async () => { E.facing = E.facing === 'user' ? 'environment' : 'user'; S.facing = E.facing; save(); await openCamera(); }, 'icon');
+  addBtn('Flip', async () => {
+    // phones: front or back camera. laptops with several cameras: the next one in the list
+    const cams = (await navigator.mediaDevices.enumerateDevices()).filter(d => d.kind === 'videoinput');
+    if (cams.length > 1 && !/iPhone|iPad|Android/i.test(navigator.userAgent)) { const i = cams.findIndex(c => c.deviceId === E.camId); S.cam = cams[(i + 1) % cams.length].deviceId; }
+    else { E.facing = E.facing === 'user' ? 'environment' : 'user'; S.facing = E.facing; S.cam = null; }
+    save(); try { await openCamera(); } catch (e) { E.toast(cameraError(e), 5000); }
+  }, 'icon');
   if (app.gates) addBtn('Set lines', () => { E.gateMode = 1; S.gates = []; E.toast('Tap on the ' + app.gateNames[0]); }, '');
   if (app.action) addBtn(app.action.label, () => app.action.fn(E), 'go');
   addBtn('Reset', () => { app.reset && app.reset(E); E.toast('Reset'); }, '');
@@ -135,9 +141,18 @@ export async function run(app) {
       { facingMode: E.facing },
       true,
     ];
+    if (S.cam) tries.unshift({ deviceId: { exact: S.cam } });
     let st = null, err = null;
-    for (const v of tries) { try { st = await navigator.mediaDevices.getUserMedia({ audio: false, video: v }); break; } catch (e) { err = e; if (e.name === 'NotAllowedError' || e.name === 'SecurityError') break; } }
+    const get = async v => { try { st = await navigator.mediaDevices.getUserMedia({ audio: false, video: v }); return true; } catch (e) { err = e; return false; } };
+    for (const v of tries) { if (await get(v)) break; if (err.name === 'NotAllowedError' || err.name === 'SecurityError') break; }
+    // still nothing: the default camera may be busy or be a face login (IR) camera, so try every camera one by one
+    if (!st && err && err.name !== 'NotAllowedError' && err.name !== 'SecurityError') {
+      const cams = (await navigator.mediaDevices.enumerateDevices()).filter(d => d.kind === 'videoinput');
+      E.camNames = cams.map(c => c.label || 'camera');
+      for (const c of cams) { if (await get({ deviceId: { exact: c.deviceId } })) { S.cam = c.deviceId; save(); break; } }
+    }
     if (!st) throw err;
+    E.camId = st.getVideoTracks()[0]?.getSettings?.().deviceId;
     // a laptop webcam faces you even when we asked for the back camera: mirror it like a selfie
     const fm = st.getVideoTracks()[0]?.getSettings?.().facingMode;
     if (fm) E.facing = fm === 'environment' ? 'environment' : 'user';
@@ -148,7 +163,7 @@ export async function run(app) {
     const n = e && e.name, m = e && e.message;
     if (m === 'NOAPI') return 'This browser cannot open the camera here. Open the link in Chrome, Safari or Edge, using the https address.';
     if (n === 'NotAllowedError' || n === 'SecurityError') return 'Camera permission is blocked. Click the camera icon in the address bar (on iPhone: Settings, Safari, Camera) and allow it, then press Start again.';
-    if (n === 'NotReadableError' || n === 'TrackStartError' || n === 'AbortError') return 'Another app or tab is using the camera (Zoom, Teams, Meet, the Camera app or another tab). Close it, then press Start again.';
+    if (n === 'NotReadableError' || n === 'TrackStartError' || n === 'AbortError') return 'Windows says every camera is busy' + (E.camNames && E.camNames.length ? ' (tried: ' + E.camNames.join(', ') + ')' : '') + '. Windows lets only one program use a camera at a time, so a program like Zoom, Teams, OBS, Camo, Phone Link, the Camera app or another browser is holding it. Close it, or restart the computer, then press Start again. On your iPhone this does not happen.';
     if (n === 'NotFoundError' || n === 'OverconstrainedError') return 'No camera was found on this device.';
     return 'Could not start: ' + (m || e) + '. Reload the page and press Start again.';
   }
