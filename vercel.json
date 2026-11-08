@@ -1,6 +1,8 @@
 {
+  "redirects": [
+    { "source": "/moves", "destination": "/moves/", "permanent": false }
+  ],
   "rewrites": [
-    { "source": "/moves", "destination": "/moves/index.html" },
     { "source": "/:room([a-z0-9-]+)", "destination": "/pages/:room.html" }
   ]
 }
