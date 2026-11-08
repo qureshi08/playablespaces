@@ -1,14 +1,17 @@
-// Moves engine: camera, body tracking, voice, hook card, screen recording.
-// Every app in apps.js is a small object; this file does the shared work.
-import { FilesetResolver, PoseLandmarker } from 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs';
+// Moves engine: camera, body / face / ball tracking, voice, hook card, screen recording, results history.
+// Every app in apps.js and apps2.js is a small object; this file does the shared work.
+import { FilesetResolver, PoseLandmarker, FaceLandmarker, ObjectDetector } from 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs';
 
 const V = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14';
+const MP = 'https://storage.googleapis.com/mediapipe-models/';
 const MODELS = {
-  lite: 'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task',
-  full: 'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_full/float16/1/pose_landmarker_full.task',
+  lite: MP + 'pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task',
+  full: MP + 'pose_landmarker/pose_landmarker_full/float16/1/pose_landmarker_full.task',
+  face: MP + 'face_landmarker/face_landmarker/float16/1/face_landmarker.task',
+  ball: MP + 'object_detector/efficientdet_lite0/float16/1/efficientdet_lite0.tflite',
 };
 export const C = { paper: '#F5F0E6', card: '#FBF7EE', ind: '#243A7A', ink: '#1B2547', mad: '#C8452A', wi: '#9DB3E2', saf: '#F2B848', wm: '#E58A6B' };
-const BONES = [[11,12],[11,13],[13,15],[12,14],[14,16],[11,23],[12,24],[23,24],[23,25],[25,27],[24,26],[26,28],[27,31],[28,32],[27,29],[28,30]];
+export const BONES = [[11,12],[11,13],[13,15],[12,14],[14,16],[11,23],[12,24],[23,24],[23,25],[25,27],[24,26],[26,28],[27,31],[28,32],[27,29],[28,30]];
 
 /* ---------- small maths helpers apps use ---------- */
 export const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
@@ -17,32 +20,34 @@ export const angle = (a, b, c) => { // angle at b, degrees
   const v1 = Math.atan2(a.y - b.y, a.x - b.x), v2 = Math.atan2(c.y - b.y, c.x - b.x);
   let d = Math.abs(v1 - v2) * 180 / Math.PI; return d > 180 ? 360 - d : d;
 };
-export const seen = (P, ids, th = 0.45) => P && ids.every(i => P[i] && P[i].v > th);
+export const seen = (P, ids, th = 0.45) => !!P && ids.every(i => P[i] && P[i].v > th);
 export const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
+// pick the body side the camera sees best: returns [shoulder, elbow, wrist, hip, knee, ankle, heel, toe] indices
+export const side = P => { const l = [11,13,15,23,25,27].reduce((s, i) => s + (P ? P[i].v : 0), 0), r = [12,14,16,24,26,28].reduce((s, i) => s + (P ? P[i].v : 0), 0); return l >= r ? [11,13,15,23,25,27,29,31] : [12,14,16,24,26,28,30,32]; };
 
-/* ---------- storage, voice, beep ---------- */
-const store = {
+/* ---------- storage, profile, history, voice, beep ---------- */
+export const store = {
   get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } },
   set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} },
 };
+export const ME = Object.assign({ height: 175, weight: 75 }, store.get('moves:me', {}));
+export function logResult(app, value, unit, better = 'high') {
+  const h = store.get('moves:history', []); h.push({ a: app, v: Math.round(value * 1000) / 1000, u: unit, b: better, t: Date.now() }); store.set('moves:history', h.slice(-3000));
+}
 let actx = null;
-export function beep(f = 880, d = 0.15, vol = 0.35) {
-  try {
-    actx = actx || new (window.AudioContext || window.webkitAudioContext)();
-    const o = actx.createOscillator(), g = actx.createGain();
-    o.type = 'square'; o.frequency.value = f; g.gain.value = vol;
-    o.connect(g); g.connect(actx.destination); o.start(); o.stop(actx.currentTime + d);
-  } catch (e) {}
+export function audio() { actx = actx || new (window.AudioContext || window.webkitAudioContext)(); return actx; }
+export function beep(f = 880, d = 0.15, vol = 0.35, type = 'square') {
+  try { const a = audio(), o = a.createOscillator(), g = a.createGain(); o.type = type; o.frequency.value = f; g.gain.value = vol; o.connect(g); g.connect(a.destination); o.start(); o.stop(a.currentTime + d); } catch (e) {}
 }
 export function say(text, rate = 1.05) {
   try { const u = new SpeechSynthesisUtterance(text); u.rate = rate; u.lang = 'en-US'; speechSynthesis.cancel(); speechSynthesis.speak(u); } catch (e) {}
 }
 function unlockAudio() {
-  try { actx = actx || new (window.AudioContext || window.webkitAudioContext)(); actx.resume(); const o = actx.createOscillator(), g = actx.createGain(); g.gain.value = 0; o.connect(g); g.connect(actx.destination); o.start(); o.stop(actx.currentTime + 0.01); } catch (e) {}
+  try { const a = audio(); a.resume(); beep(440, 0.01, 0); } catch (e) {}
   try { speechSynthesis.speak(new SpeechSynthesisUtterance(' ')); } catch (e) {}
 }
 
-/* ---------- drawing helpers (all sizes in units of U = width / 100) ---------- */
+/* ---------- drawing helpers (all sizes in units of U = short side / 100) ---------- */
 function rrect(g, x, y, w, h, r) { g.beginPath(); g.roundRect ? g.roundRect(x, y, w, h, r) : g.rect(x, y, w, h); }
 export function panel(g, E, x, y, w, h, fill = C.card) {
   g.save(); g.globalAlpha = 0.93; g.fillStyle = fill; rrect(g, x, y, w, h, E.U * 2.2); g.fill(); g.globalAlpha = 1;
@@ -52,7 +57,7 @@ export function text(g, E, s, x, y, size, col = C.ink, weight = 800, align = 'ce
   g.font = `${weight} ${size * E.U}px 'Shantell Sans', cursive`; g.fillStyle = col; g.textAlign = align; g.textBaseline = 'middle'; g.fillText(s, x, y);
 }
 export function measure(g, E, s, size, weight = 800) { g.font = `${weight} ${size * E.U}px 'Shantell Sans', cursive`; return g.measureText(s).width; }
-// a card that fits its text: lines = [[text, size, colour], ...]
+// a card that fits its text: lines = [[text, size, colour, weight], ...]
 export function card(g, E, lines, x, y, align = 'center') {
   const pad = E.U * 3; let w = 0, h = pad;
   lines.forEach(([s, size, , wt]) => { w = Math.max(w, measure(g, E, s, size, wt || 800)); h += size * E.U * 1.25; });
@@ -66,10 +71,22 @@ export function card(g, E, lines, x, y, align = 'center') {
 export function dashed(g, E, x1, y1, x2, y2, col = C.mad, w = 0.6) {
   g.save(); g.setLineDash([E.U * 2, E.U * 1.6]); g.strokeStyle = col; g.lineWidth = E.U * w; g.beginPath(); g.moveTo(x1, y1); g.lineTo(x2, y2); g.stroke(); g.restore();
 }
-function wrap(g, E, s, size, maxW) {
+export function wrap(g, E, s, size, maxW) {
   const words = s.split(' '), out = []; let line = '';
   words.forEach(w => { const t = line ? line + ' ' + w : w; if (measure(g, E, t, size) > maxW && line) { out.push(line); line = w; } else line = t; });
   if (line) out.push(line); return out;
+}
+// big score card used by most apps: label, value, optional small line
+export function scoreCard(g, E, label, value, sub, x = E.U * 5, y = E.H * 0.6, col = C.mad, align = 'left') {
+  const lines = [[label, 4, C.ink, 600], [value, 13, col]]; if (sub) lines.push([sub, 3.6, C.ind, 600]);
+  return card(g, E, lines, x, y, align);
+}
+export function bigNote(g, E, s, col = C.ind, y = E.H * 0.24) { const lines = wrap(g, E, s, 5.4, E.W * 0.86); return card(g, E, lines.map(l => [l, 5.4, col]), E.W / 2, y); }
+export function meter(g, E, frac, mark, x, y, h, label) { // vertical meter with a target line
+  const w = E.U * 5; panel(g, E, x, y, w, h, '#fff');
+  g.fillStyle = frac >= mark ? C.ind : C.saf; g.fillRect(x + E.U, y + h - (h - E.U * 2) * clamp(frac, 0, 1) - E.U, w - E.U * 2, (h - E.U * 2) * clamp(frac, 0, 1));
+  const my = y + h - (h - E.U * 2) * mark - E.U; g.strokeStyle = C.mad; g.lineWidth = E.U * 0.6; g.beginPath(); g.moveTo(x - E.U, my); g.lineTo(x + w + E.U, my); g.stroke();
+  if (label) text(g, E, label, x + w / 2, y + h + E.U * 3, 3, C.paper, 700);
 }
 
 /* ---------- the engine ---------- */
@@ -79,13 +96,17 @@ export async function run(app) {
   const cv = $('#cv'), g = cv.getContext('2d'), video = $('#vid');
   const key = 'moves:' + app.id;
   const S = Object.assign({}, ...(app.settings || []).map(s => ({ [s.k]: s.def })), store.get(key, {}));
-  const save = () => store.set(key, S);
+  (app.settings || []).forEach(s => { if (s.global) S[s.k] = ME[s.k] ?? s.def; });
+  const save = () => { store.set(key, S); (app.settings || []).forEach(s => { if (s.global) ME[s.k] = S[s.k]; }); store.set('moves:me', ME); };
   const E = {
-    app, S, save, U: 4, W: 400, H: 700, P: null, Sm: null, t: 0, facing: S.facing || app.cam || 'environment',
-    hookUntil: 0, msg: '', gateMode: 0, recording: false, say, beep,
+    app, S, save, U: 4, W: 720, H: 1280, P: null, Sm: null, Ps: [], F: null, B: {}, ball: null, t: 0, ppm: null,
+    facing: S.facing || app.cam || 'environment', hookUntil: 0, msg: '', gateMode: 0, recording: false, say, beep, ME,
     now: () => performance.now() / 1000,
+    log: (v, unit, better) => logResult(app.id, v, unit, better),
     toast(s, ms = 1800) { const el = $('#toast'); el.textContent = s; el.classList.add('on'); clearTimeout(el._t); el._t = setTimeout(() => el.classList.remove('on'), ms); },
+    m(px) { return E.ppm ? px / E.ppm : null; }, // pixels to metres, once the app has seen you standing
   };
+  E.video = video;
   app.reset && app.reset(E);
 
   /* intro screen */
@@ -102,40 +123,47 @@ export async function run(app) {
   });
   form.addEventListener('change', e => { const k = e.target.dataset.k; if (k) { S[k] = Number(e.target.value); save(); app.reset && app.reset(E); } });
   document.title = app.title + ' · Moves';
+  if (app.noCamera) { $('#startState').textContent = 'No camera needed. Turn the sound on.'; }
 
   /* bottom bar buttons */
   const bar = $('#bar');
   const addBtn = (label, fn, cls = '') => { const b = document.createElement('button'); b.textContent = label; b.className = cls; b.onclick = fn; bar.appendChild(b); return b; };
   addBtn('←', () => { location.href = './'; }, 'icon');
-  addBtn('Flip', async () => {
-    // phones: front or back camera. laptops with several cameras: the next one in the list
+  if (!app.noCamera) addBtn('Flip', async () => {
     const cams = (await navigator.mediaDevices.enumerateDevices()).filter(d => d.kind === 'videoinput');
     if (cams.length > 1 && !/iPhone|iPad|Android/i.test(navigator.userAgent)) { const i = cams.findIndex(c => c.deviceId === E.camId); S.cam = cams[(i + 1) % cams.length].deviceId; }
     else { E.facing = E.facing === 'user' ? 'environment' : 'user'; S.facing = E.facing; S.cam = null; }
     save(); try { await openCamera(); } catch (e) { E.toast(cameraError(e), 5000); }
   }, 'icon');
-  if (app.gates) addBtn('Set lines', () => { E.gateMode = 1; S.gates = []; E.toast('Tap on the ' + app.gateNames[0]); }, '');
-  if (app.action) addBtn(app.action.label, () => app.action.fn(E), 'go');
+  if (app.gates) addBtn('Set lines', () => { E.gateMode = 'lines'; S.gates = []; E.toast('Tap on the ' + app.gateNames[0]); }, '');
+  if (app.points) addBtn('Set spot', () => { E.gateMode = 'pts'; S.pts = []; E.toast('Tap on the ' + app.pointNames[0]); }, '');
+  (app.buttons || (app.action ? [app.action] : [])).forEach(b => addBtn(b.label, () => b.fn.call(app, E), 'go'));
   addBtn('Reset', () => { app.reset && app.reset(E); E.toast('Reset'); }, '');
   const recBtn = addBtn('● Rec', () => toggleRec(), 'rec');
 
-  /* tap to set lines (gates) */
+  /* taps: set lines or spots, otherwise the app gets the tap */
   cv.addEventListener('pointerdown', e => {
-    if (!E.gateMode) return;
     const r = cv.getBoundingClientRect(), sc = Math.min(r.width / cv.width, r.height / cv.height);
-    const ox = r.left + (r.width - cv.width * sc) / 2;
-    const x = (e.clientX - ox) / sc / cv.width;
-    S.gates = S.gates || []; S.gates.push(clamp(x, 0, 1));
-    if (S.gates.length >= 2) { E.gateMode = 0; save(); app.reset && app.reset(E); E.toast('Lines set'); }
-    else E.toast('Now tap on the ' + app.gateNames[1]);
+    const ox = r.left + (r.width - cv.width * sc) / 2, oy = r.top + (r.height - cv.height * sc) / 2;
+    const x = (e.clientX - ox) / sc, y = (e.clientY - oy) / sc;
+    if (E.gateMode === 'lines') {
+      S.gates.push(clamp(x / cv.width, 0, 1));
+      if (S.gates.length >= app.gates) { E.gateMode = 0; save(); app.reset && app.reset(E); E.toast('Lines set'); } else E.toast('Now tap on the ' + app.gateNames[S.gates.length]);
+      return;
+    }
+    if (E.gateMode === 'pts') {
+      S.pts.push({ x: clamp(x / cv.width, 0, 1), y: clamp(y / cv.height, 0, 1) });
+      if (S.pts.length >= app.points) { E.gateMode = 0; save(); app.reset && app.reset(E); E.toast('Spot set'); } else E.toast('Now tap on the ' + app.pointNames[S.pts.length]);
+      return;
+    }
+    if (app.tap) app.tap(E, x, y);
   });
 
   /* camera or test video */
   async function openCamera() {
     if (video.srcObject) video.srcObject.getTracks().forEach(t => t.stop());
-    if (params.get('video')) { video.srcObject = null; video.src = params.get('video'); video.loop = true; E.facing = 'environment'; await video.play(); return; }
+    if (params.get('video')) { video.srcObject = null; video.src = params.get('video'); video.loop = true; E.facing = 'environment'; await playVideo(); return; }
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) throw new Error('NOAPI');
-    // try the best settings first, then simpler ones (some laptop webcams refuse 60 fps or HD)
     const tries = [
       { facingMode: E.facing, width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 60 } },
       { facingMode: E.facing },
@@ -145,7 +173,6 @@ export async function run(app) {
     let st = null, err = null;
     const get = async v => { try { st = await navigator.mediaDevices.getUserMedia({ audio: false, video: v }); return true; } catch (e) { err = e; return false; } };
     for (const v of tries) { if (await get(v)) break; if (err.name === 'NotAllowedError' || err.name === 'SecurityError') break; }
-    // still nothing: the default camera may be busy or be a face login (IR) camera, so try every camera one by one
     if (!st && err && err.name !== 'NotAllowedError' && err.name !== 'SecurityError') {
       const cams = (await navigator.mediaDevices.enumerateDevices()).filter(d => d.kind === 'videoinput');
       E.camNames = cams.map(c => c.label || 'camera');
@@ -153,12 +180,13 @@ export async function run(app) {
     }
     if (!st) throw err;
     E.camId = st.getVideoTracks()[0]?.getSettings?.().deviceId;
-    // a laptop webcam faces you even when we asked for the back camera: mirror it like a selfie
     const fm = st.getVideoTracks()[0]?.getSettings?.().facingMode;
     if (fm) E.facing = fm === 'environment' ? 'environment' : 'user';
     else if (!/iPhone|iPad|Android/i.test(navigator.userAgent)) E.facing = 'user';
-    video.srcObject = st; await video.play();
+    video.srcObject = st; await playVideo();
   }
+  // play() can be interrupted on some browsers; that is not a camera problem, so retry quietly
+  async function playVideo() { for (let i = 0; i < 5; i++) { try { await video.play(); return; } catch (e) { await new Promise(r => setTimeout(r, 200)); } } }
   function cameraError(e) {
     const n = e && e.name, m = e && e.message;
     if (m === 'NOAPI') return 'This browser cannot open the camera here. Open the link in Chrome, Safari or Edge, using the https address.';
@@ -167,10 +195,14 @@ export async function run(app) {
     if (n === 'NotFoundError' || n === 'OverconstrainedError') return 'No camera was found on this device.';
     return 'Could not start: ' + (m || e) + '. Reload the page and press Start again.';
   }
-  async function loadPose() {
+  async function loadModels() {
     const files = await FilesetResolver.forVisionTasks(V + '/wasm');
-    const opts = d => ({ baseOptions: { modelAssetPath: MODELS[app.model || 'full'], delegate: d }, runningMode: 'VIDEO', numPoses: 1, minPoseDetectionConfidence: 0.5, minPosePresenceConfidence: 0.5, minTrackingConfidence: 0.5 });
-    try { return await PoseLandmarker.createFromOptions(files, opts('GPU')); } catch (e) { return await PoseLandmarker.createFromOptions(files, opts('CPU')); }
+    const make = async (Cls, o) => { try { return await Cls.createFromOptions(files, { ...o, baseOptions: { ...o.baseOptions, delegate: 'GPU' } }); } catch (e) { return await Cls.createFromOptions(files, { ...o, baseOptions: { ...o.baseOptions, delegate: 'CPU' } }); } };
+    const m = {};
+    if (app.pose !== false) m.pose = await make(PoseLandmarker, { baseOptions: { modelAssetPath: MODELS[app.model || 'full'] }, runningMode: 'VIDEO', numPoses: app.people || 1, minPoseDetectionConfidence: 0.5, minPosePresenceConfidence: 0.5, minTrackingConfidence: 0.5 });
+    if (app.face) m.face = await make(FaceLandmarker, { baseOptions: { modelAssetPath: MODELS.face }, runningMode: 'VIDEO', numFaces: 1, outputFaceBlendshapes: true });
+    if (app.ball) m.ball = await make(ObjectDetector, { baseOptions: { modelAssetPath: MODELS.ball }, runningMode: 'VIDEO', scoreThreshold: 0.2, maxResults: 3, categoryAllowlist: ['sports ball'] });
+    return m;
   }
 
   /* recording */
@@ -185,7 +217,7 @@ export async function run(app) {
       chunks = []; rec.ondataavailable = e => { if (e.data && e.data.size) chunks.push(e.data); };
       rec.onstop = () => { const type = rec.mimeType || mt || 'video/mp4'; offerSave(new Blob(chunks, { type }), type); rec = null; E.recording = false; recBtn.textContent = '● Rec'; recBtn.classList.remove('on'); };
       rec.start(500); E.recording = true; E.hookUntil = E.now() + 2.8; recBtn.textContent = '■ Stop'; recBtn.classList.add('on');
-    } catch (e) { E.toast('Recording is not supported here. Use the iPhone screen recorder.', 3500); rec = null; }
+    } catch (e) { E.toast('Recording is not supported here. Use the phone screen recorder.', 3500); rec = null; }
   }
   function offerSave(blob, type) {
     const ext = type.includes('mp4') ? 'mp4' : 'webm', file = new File([blob], `${app.id}-${Date.now()}.${ext}`, { type });
@@ -200,65 +232,90 @@ export async function run(app) {
   /* start button */
   $('#startBtn').onclick = async () => {
     unlockAudio();
-    const st = $('#startState'); st.textContent = 'Opening the camera...';
+    const st = $('#startState');
     try {
-      await openCamera();
-      st.textContent = 'Loading the body tracker (first time takes a few seconds)...';
-      const pose = await loadPose();
+      let models = {};
+      if (!app.noCamera) {
+        st.textContent = 'Opening the camera...';
+        try { await openCamera(); } catch (e) { st.textContent = cameraError(e); return; }
+        st.textContent = 'Loading the tracker (first time takes a few seconds)...';
+        models = await loadModels();
+      }
       try { if ('wakeLock' in navigator) await navigator.wakeLock.request('screen'); } catch (e) {}
       $('#intro').classList.add('off');
       E.hookUntil = E.now() + 2.8;
-      loop(pose);
-    } catch (e) { st.textContent = (e && e.name) ? cameraError(e) : 'Could not load the body tracker. Check the internet connection and press Start again.'; }
+      app.start && app.start(E);
+      loop(models);
+    } catch (e) { console.error(e); st.textContent = 'Could not load the tracker. Check the internet connection and press Start again.'; }
   };
 
   /* main loop */
-  function loop(pose) {
+  function loop(m) {
     let lastTs = 0;
     const step = (now) => {
-      const W = video.videoWidth, H = video.videoHeight;
+      let W = video.videoWidth, H = video.videoHeight;
+      if (app.noCamera) { W = 720; H = Math.round(720 * clamp(innerHeight / innerWidth, 1.2, 2.2)); }
       if (W && H) {
         if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; }
         E.W = W; E.H = H; E.U = Math.min(W, H) / 100;
         const ts = Math.max(performance.now(), lastTs + 1); lastTs = ts;
         E.t = (now || performance.now()) / 1000;
-        let res = null; try { res = pose.detectForVideo(video, ts); } catch (e) {}
-        const mirror = E.facing === 'user';
-        const raw = res && res.landmarks && res.landmarks[0];
-        if (raw) {
-          E.P = raw.map(p => ({ x: (mirror ? 1 - p.x : p.x) * W, y: p.y * H, v: p.visibility ?? 1 }));
-          E.Sm = E.Sm ? E.Sm.map((q, i) => ({ x: q.x * 0.45 + E.P[i].x * 0.55, y: q.y * 0.45 + E.P[i].y * 0.55, v: E.P[i].v })) : E.P.map(p => ({ ...p }));
-        } else { E.P = null; E.Sm = null; }
+        const mirror = E.facing === 'user' && !app.noCamera;
+        const px = p => ({ x: (mirror ? 1 - p.x : p.x) * W, y: p.y * H, v: p.visibility ?? 1 });
+        if (m.pose) {
+          let res = null; try { res = m.pose.detectForVideo(video, ts); } catch (e) {}
+          const people = (res && res.landmarks ? res.landmarks : []).map(l => l.map(px));
+          people.sort((a, b) => (a[23].x + a[24].x) - (b[23].x + b[24].x)); E.Ps = people;
+          const main = people.slice().sort((a, b) => Math.abs(b[0].y - b[27].y) - Math.abs(a[0].y - a[27].y))[0];
+          if (main) { E.P = main; E.Sm = E.Sm ? E.Sm.map((q, i) => ({ x: q.x * 0.45 + main[i].x * 0.55, y: q.y * 0.45 + main[i].y * 0.55, v: main[i].v })) : main.map(p => ({ ...p })); }
+          else { E.P = null; E.Sm = null; }
+          scaleFrom(E.P);
+        }
+        if (m.face) {
+          let r = null; try { r = m.face.detectForVideo(video, ts); } catch (e) {}
+          E.F = r && r.faceLandmarks && r.faceLandmarks[0] ? r.faceLandmarks[0].map(p => ({ x: (mirror ? 1 - p.x : p.x) * W, y: p.y * H, v: 1 })) : null;
+          E.B = {}; if (r && r.faceBlendshapes && r.faceBlendshapes[0]) r.faceBlendshapes[0].categories.forEach(c => { E.B[c.categoryName] = c.score; });
+        }
+        if (m.ball) {
+          let r = null; try { r = m.ball.detectForVideo(video, ts); } catch (e) {}
+          const d = r && r.detections && r.detections.sort((a, b) => b.categories[0].score - a.categories[0].score)[0];
+          if (d) { const bb = d.boundingBox, cx = bb.originX + bb.width / 2; E.ball = { x: mirror ? W - cx : cx, y: bb.originY + bb.height / 2, r: Math.max(bb.width, bb.height) / 2, t: E.t }; }
+          else if (E.ball && E.t - E.ball.t > 0.3) E.ball = null;
+        }
         E.msg = '';
-        try { app.frame(E); } catch (e) { console.error(e); }
+        try { app.frame && app.frame(E); } catch (e) { console.error(e); }
         drawFrame(mirror);
       }
-      if (video.requestVideoFrameCallback) video.requestVideoFrameCallback(step); else requestAnimationFrame(step);
+      if (!app.noCamera && video.requestVideoFrameCallback) video.requestVideoFrameCallback(step); else requestAnimationFrame(step);
     };
-    if (video.requestVideoFrameCallback) video.requestVideoFrameCallback(step); else requestAnimationFrame(step);
+    if (!app.noCamera && video.requestVideoFrameCallback) video.requestVideoFrameCallback(step); else requestAnimationFrame(step);
+  }
+  // metres from pixels: learned whenever you stand straight (nose to ankle is about 89% of height)
+  function scaleFrom(P) {
+    if (!seen(P, [0, 11, 12, 23, 24, 25, 26, 27, 28], 0.5)) return;
+    const ank = (P[27].y + P[28].y) / 2, hip = (P[23].y + P[24].y) / 2, sh = (P[11].y + P[12].y) / 2;
+    const upright = P[0].y < sh && sh < hip && hip < ank && Math.abs((P[23].x + P[24].x) / 2 - (P[27].x + P[28].x) / 2) < (ank - hip) * 0.25 && angle(P[23], P[25], P[27]) > 160 && angle(P[24], P[26], P[28]) > 160;
+    if (upright) { const v = (ank - P[0].y) / (0.89 * ME.height / 100); E.ppm = E.ppm ? E.ppm * 0.95 + v * 0.05 : v; }
   }
 
   function drawFrame(mirror) {
     const W = E.W, H = E.H, U = E.U;
-    g.save(); if (mirror) { g.translate(W, 0); g.scale(-1, 1); } g.drawImage(video, 0, 0, W, H); g.restore();
-    // skeleton
-    const P = E.Sm;
-    if (P && app.skeleton !== false) {
+    if (app.noCamera) { g.fillStyle = C.paper; g.fillRect(0, 0, W, H); }
+    else { g.save(); if (mirror) { g.translate(W, 0); g.scale(-1, 1); } g.drawImage(video, 0, 0, W, H); g.restore(); }
+    const people = app.people > 1 ? E.Ps : (E.Sm ? [E.Sm] : []);
+    if (app.skeleton !== false) people.forEach(P => {
       g.lineCap = 'round'; g.strokeStyle = C.saf; g.lineWidth = U * 0.9;
       BONES.forEach(([a, b]) => { if (P[a].v > 0.4 && P[b].v > 0.4) { g.beginPath(); g.moveTo(P[a].x, P[a].y); g.lineTo(P[b].x, P[b].y); g.stroke(); } });
       [0, 11, 12, 13, 14, 15, 16, 23, 24, 25, 26, 27, 28].forEach(i => { if (P[i].v > 0.4) { g.beginPath(); g.arc(P[i].x, P[i].y, U * 1.1, 0, 7); g.fillStyle = C.mad; g.fill(); g.lineWidth = U * 0.3; g.strokeStyle = C.paper; g.stroke(); } });
-    }
-    // gates
+    });
+    if (app.ball && E.ball) { g.strokeStyle = C.mad; g.lineWidth = U * 0.8; g.beginPath(); g.arc(E.ball.x, E.ball.y, E.ball.r * 1.2, 0, 7); g.stroke(); }
     if (app.gates && S.gates && S.gates.length) S.gates.forEach((gx, i) => { const x = gx * W; dashed(g, E, x, H * 0.08, x, H * 0.97, C.mad, 0.8); text(g, E, app.gateLabels[i], x, H * 0.06, 3.6, C.mad); });
-    if (app.gates && (!S.gates || S.gates.length < 2) && !E.gateMode) card(g, E, [['Press Set lines,', 4, C.ink], ['then tap each cone on screen', 3.4, C.ink, 500]], W / 2, H * 0.4);
-    try { app.draw(g, E); } catch (e) { console.error(e); }
-    if (E.msg) card(g, E, [[E.msg, 3.6, C.ink, 600]], W / 2, H * 0.86);
-    // hook card in the first seconds
-    if (E.now() < E.hookUntil) {
-      const lines = wrap(g, E, app.hook, 6.4, W * 0.84);
-      card(g, E, lines.map(l => [l, 6.4, C.mad]), W / 2, H * 0.1);
-    }
-    // signature
+    if (app.gates && (!S.gates || S.gates.length < app.gates) && !E.gateMode) card(g, E, [['Press Set lines,', 4, C.ink], ['then tap each cone on screen', 3.4, C.ink, 500]], W / 2, H * 0.4);
+    if (app.points && S.pts && S.pts.length) S.pts.forEach((p, i) => { g.strokeStyle = C.mad; g.lineWidth = U * 0.7; g.beginPath(); g.arc(p.x * W, p.y * H, U * 5, 0, 7); g.stroke(); text(g, E, app.pointLabels[i], p.x * W, p.y * H - U * 8, 3.4, C.mad); });
+    if (app.points && (!S.pts || S.pts.length < app.points) && !E.gateMode) card(g, E, [['Press Set spot,', 4, C.ink], ['then tap the ' + app.pointNames[0], 3.4, C.ink, 500]], W / 2, H * 0.4);
+    try { app.draw && app.draw(g, E); } catch (e) { console.error(e); }
+    if (E.msg) card(g, E, wrap(g, E, E.msg, 3.6, W * 0.85).map(l => [l, 3.6, C.ink, 600]), W / 2, H * 0.86);
+    if (E.now() < E.hookUntil) { const lines = wrap(g, E, app.hook, 6.4, W * 0.84); card(g, E, lines.map(l => [l, 6.4, C.mad]), W / 2, H * 0.1); }
     text(g, E, 'Anas Qureshi', W - U * 3, H - U * 3, 3.2, C.mad, 700, 'right');
   }
 }

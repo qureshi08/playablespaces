@@ -16,6 +16,7 @@ button.rec.on{background:var(--mad);color:#fff}
 .app h2{margin:0;color:var(--ind);font-size:23px}
 .app .hook{color:var(--mad);font-weight:700;margin:4px 0}
 .app p{margin:0;font-size:15px}
+.cat{font-family:'Shantell Sans',cursive;color:var(--mad);font-size:22px;margin:18px 0 0}
 .tip{margin-top:22px;font-size:15px;background:rgba(242,184,72,.25);border-radius:14px;padding:12px 14px}
 /* app screen */
 .appbody{background:#000;overflow:hidden;height:100dvh}

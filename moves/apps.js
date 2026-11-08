@@ -1,5 +1,5 @@
 // The six first apps. Each one: setup text, settings, frame(E) logic, draw(g, E) on screen.
-import { C, dist, mid, angle, seen, clamp, card, text, dashed, panel, beep, say } from './engine.js';
+import { store, C, dist, mid, angle, seen, clamp, card, text, dashed, panel, beep, say, meter } from './engine.js';
 
 /* Bolt, Berlin 2009 (9.58 WR), official cumulative splits from the gun, reaction 0.146 s */
 const BOLT = [[0, 0], [0.146, 0], [1.89, 10], [2.88, 20], [3.78, 30]];
@@ -30,44 +30,48 @@ export const APPS = {
 /* 1 ---------------------------------------------------------------- */
 pullup: {
   id: 'pullup', title: 'Strict pull up check', hook: 'Only chin over bar counts.', cam: 'environment',
-  setup: ['Put the phone on the ground or a tripod, 2 to 3 m in front of the bar, filming you from the front.', 'Your hands, elbows and face must be in the picture.', 'Hang with straight arms, then go. A rep counts only when your chin clears the bar and your arms straighten again.'],
-  reset(E) { this.st = { reps: 0, no: 0, phase: 'off', barY: null, last: '', lastAt: 0 }; },
+  cat: 'Calisthenics',
+  settings: [{ k: 'top', label: 'Top counts at (% of the way up)', def: 80 }],
+  setup: ['Phone on the ground or a tripod, 2 to 3 m from the bar, filming from the front or from behind.', 'Your hands, elbows and shoulders must be in the picture.', 'Hang with straight arms, then go. A rep counts when your shoulders rise to the bar (chin over bar) and your arms straighten again.'],
+  reset(E) { this.st = { reps: 0, no: 0, phase: 'off', arm: null, h: 0, last: '', lastAt: 0, barY: null }; },
   frame(E) {
-    const st = this.st, P = E.P;
-    if (!seen(P, [0, 11, 12, 13, 14, 15, 16])) { E.msg = 'Show your hands, elbows and face'; return; }
-    const by = (P[15].y + P[16].y) / 2; st.barY = st.barY == null ? by : st.barY * 0.85 + by * 0.15;
-    const sw = dist(P[11], P[12]), nose = P[0].y, shY = (P[11].y + P[12].y) / 2;
-    if (st.barY > shY) { st.phase = 'off'; E.msg = 'Grab the bar'; return; }
-    const elb = Math.min(angle(P[11], P[13], P[15]), angle(P[12], P[14], P[16]));
-    const ext = elb > 150, chin = nose < st.barY - 0.12 * sw;
-    if (st.phase === 'off') { if (ext) { st.phase = 'bottom'; st.bottomNose = nose; } return; }
-    if (st.phase === 'bottom') {
-      if (ext) st.bottomNose = Math.max(st.bottomNose, nose);
-      else if (nose < st.bottomNose - 0.35 * sw) { st.phase = 'up'; st.top = false; }
-      return;
-    }
+    // height = how far the shoulders have climbed toward the hands: 0 at a dead hang, 1 with shoulders at the bar
+    const st = this.st, P = E.Sm;
+    if (!seen(P, [11, 12, 13, 14, 15, 16], 0.4)) { E.msg = 'Show your hands, elbows and shoulders'; return; }
+    const arm = (dist(P[11], P[13]) + dist(P[13], P[15]) + dist(P[12], P[14]) + dist(P[14], P[16])) / 2;
+    const wy = (P[15].y + P[16].y) / 2, sy = (P[11].y + P[12].y) / 2;
+    st.barY = st.barY == null ? wy : st.barY * 0.9 + wy * 0.1;
+    if (wy > sy + arm * 0.3) { st.phase = 'off'; E.msg = 'Grab the bar'; return; }
+    const ext = Math.min(angle(P[11], P[13], P[15]), angle(P[12], P[14], P[16])) > 145;
+    if (ext) st.arm = st.arm ? Math.max(st.arm * 0.995, arm) : arm; // straight arm length, slowly forgetting
+    if (!st.arm) { E.msg = 'Hang with straight arms first'; return; }
+    st.h = clamp(1 - (sy - wy) / st.arm, 0, 1.2);
+    const topAt = E.S.top / 100;
+    if (st.phase === 'off') { if (st.h < 0.25) st.phase = 'bottom'; return; }
+    if (st.phase === 'bottom') { if (st.h > 0.4) { st.phase = 'up'; st.top = false; } return; }
     if (st.phase === 'up') {
-      if (chin) { if (!st.top) beep(1300, 0.06); st.top = true; }
-      if (ext) {
-        if (st.top) { st.reps++; say(String(st.reps)); st.last = 'good'; }
+      if (st.h >= topAt && !st.top) { st.top = true; beep(1300, 0.06); }
+      if (st.h < 0.25) {
+        if (st.top) { st.reps++; say(String(st.reps)); st.last = 'good'; E.log(st.reps, 'reps'); }
         else { st.no++; say('No rep'); st.last = 'no'; }
-        st.lastAt = E.t; st.phase = 'bottom'; st.bottomNose = nose;
+        st.lastAt = E.t; st.phase = 'bottom';
       }
     }
   },
   draw(g, E) {
-    const st = this.st, W = E.W, H = E.H;
-    if (st.barY != null) { dashed(g, E, 0, st.barY, W, st.barY, C.mad, 0.7); text(g, E, 'bar', E.U * 6, st.barY - E.U * 3, 3.2, C.mad, 700); }
-    const c = card(g, E, [['Reps', 4, C.ink, 600], [String(st.reps), 16, C.mad]], E.U * 5, H * 0.62, 'left');
-    card(g, E, [['No reps', 3.4, C.ink, 600], [String(st.no), 7, C.ind]], E.U * 5 + c.w + E.U * 3, H * 0.62 + c.h - E.U * 17, 'left');
+    const st = this.st, W = E.W, H = E.H, U = E.U;
+    if (st.barY != null) { dashed(g, E, 0, st.barY, W, st.barY, C.mad, 0.7); text(g, E, 'bar', U * 6, st.barY - U * 3, 3.2, C.mad, 700); }
+    const c = card(g, E, [['Reps', 4, C.ink, 600], [String(st.reps), 16, C.mad]], U * 5, H * 0.62, 'left');
+    card(g, E, [['No reps', 3.4, C.ink, 600], [String(st.no), 7, C.ind]], U * 5 + c.w + U * 3, H * 0.62 + c.h - U * 17, 'left');
+    meter(g, E, st.h, E.S.top / 100, W - U * 12, H * 0.35, H * 0.3, 'height');
     if (st.phase === 'up' && st.top) card(g, E, [['Chin over bar ✓', 5, C.ind]], W / 2, H * 0.26);
-    if (E.t - st.lastAt < 1.2 && st.last) card(g, E, [[st.last === 'good' ? 'Rep ' + st.reps + ' ✓' : 'No rep: chin under bar', 5.5, st.last === 'good' ? C.ind : C.mad]], W / 2, H * 0.26);
+    else if (E.t - st.lastAt < 1.2 && st.last) card(g, E, [[st.last === 'good' ? 'Rep ' + st.reps + ' ✓' : 'No rep: not high enough', 5.5, st.last === 'good' ? C.ind : C.mad]], W / 2, H * 0.26);
   },
 },
 
 /* 2 ---------------------------------------------------------------- */
 lever: {
-  id: 'lever', title: 'Front lever angle', hook: 'Is my front lever actually flat?', cam: 'environment',
+  cat: 'Calisthenics', id: 'lever', title: 'Front lever angle', hook: 'Is my front lever actually flat?', cam: 'environment',
   settings: [{ k: 'tol', label: 'Counts as a hold within (degrees)', def: 10 }],
   setup: ['Phone on a tripod, side on to you, about 3 m away, level with the bar.', 'Your whole body, bar to feet, must be in the picture.', 'Pull into the lever. The app shows your body angle live and times every hold within the limit you set.'],
   reset(E) { this.st = { deg: null, best: 0, last: 0, lastAt: 0, cur: 0, hs: null }; },
@@ -80,7 +84,7 @@ lever: {
     const dx = Math.abs(an.x - sh.x) || 1; st.deg = Math.atan2(an.y - sh.y, dx) * 180 / Math.PI; st.sh = sh; st.an = an; st.hip = hip;
     const hanging = wr.y < sh.y, flatish = dx > dist(sh, an) * 0.6;
     const done = holdTimer(st, E, hanging && flatish && Math.abs(st.deg) <= E.S.tol);
-    if (done > 0.8) { st.last = done; st.lastAt = E.t; st.best = Math.max(st.best, done); say(done.toFixed(1) + ' seconds'); }
+    if (done > 0.8) { st.last = done; st.lastAt = E.t; st.best = Math.max(st.best, done); say(done.toFixed(1) + ' seconds'); E.log(done, 's'); }
   },
   draw(g, E) {
     const st = this.st, U = E.U, W = E.W, H = E.H;
@@ -98,7 +102,7 @@ lever: {
 
 /* 3 ---------------------------------------------------------------- */
 handstand: {
-  id: 'handstand', title: 'Handstand judge', hook: 'AI judges my handstand like an Olympic judge.', cam: 'environment',
+  cat: 'Calisthenics', id: 'handstand', title: 'Handstand judge', hook: 'AI judges my handstand like an Olympic judge.', cam: 'environment',
   setup: ['Phone on a tripod 3 m away, from the side for line, or from the front for balance.', 'Leave space above your feet so the whole body stays in the picture.', 'Kick up and hold. When you come down the app gives a score out of 10 from your line and your hold time.'],
   reset(E) { this.st = { hs: null, cur: 0, sum: 0, n: 0, line: 0, result: null, resAt: 0 }; },
   frame(E) {
@@ -118,7 +122,7 @@ handstand: {
     const st = this.st; if (d < 1.5 || !st.n) { st.sum = 0; st.n = 0; return; }
     const avg = st.sum / st.n, score = Math.round((4 + 4 * avg / 100 + 2 * Math.min(1, d / 30)) * 10) / 10;
     st.result = { score, avg, d, cards: [score - 0.1, score + 0.1, score].map(x => clamp(x, 0, 10).toFixed(1)) }; st.resAt = E.t;
-    st.sum = 0; st.n = 0; say('Score ' + score.toFixed(1));
+    st.sum = 0; st.n = 0; say('Score ' + score.toFixed(1)); E.log(score, '/10');
   },
   draw(g, E) {
     const st = this.st, U = E.U, W = E.W, H = E.H;
@@ -138,8 +142,8 @@ handstand: {
 
 /* 4 ---------------------------------------------------------------- */
 watts: {
-  id: 'watts', title: 'Leg power in watts', hook: 'How many watts do my legs make?', cam: 'environment',
-  settings: [{ k: 'kg', label: 'Body weight (kg)', def: 75 }],
+  cat: 'Power', id: 'watts', title: 'Leg power in watts', hook: 'How many watts do my legs make?', cam: 'environment',
+  settings: [{ k: 'weight', label: 'Body weight (kg)', def: 75, global: true }],
   setup: ['Phone on a tripod or the floor, 3 m away, your whole body in the picture with space above your head.', 'Stand still for 2 seconds so the app learns where the floor is.', 'Jump as high as you can, hands on hips or free. Land on the same spot.', 'Peak power uses the Sayers formula: jump height plus your body weight.'],
   reset(E) { this.st = { base: null, hipBase: null, leg: null, air: false, prevY: null, prevT: 0, last: null, best: null, lastAt: 0 }; },
   frame(E) {
@@ -158,9 +162,9 @@ watts: {
       if (y >= th) {
         st.air = false; const t1 = crossed(st.prevY, y, th, st.prevT, t) ?? t, ft = t1 - st.t0;
         if (st.hipUp && ft > 0.15 && ft < 1.2) {
-          const cm = 9.81 * ft * ft / 8 * 100, w = 60.7 * cm + 45.3 * E.S.kg - 2055;
+          const cm = 9.81 * ft * ft / 8 * 100, w = 60.7 * cm + 45.3 * E.S.weight - 2055;
           st.last = { cm, w, ft }; st.lastAt = t; if (!st.best || w > st.best.w) st.best = st.last;
-          say(Math.round(w) + ' watts');
+          say(Math.round(w) + ' watts'); E.log(w, 'W');
         }
       }
     }
@@ -180,7 +184,7 @@ watts: {
 
 /* 5 ---------------------------------------------------------------- */
 topspeed: {
-  id: 'topspeed', title: 'Top speed vs Bolt', hook: 'My top speed vs Usain Bolt\'s 44.7 km/h.', cam: 'environment', model: 'full',
+  cat: 'Speed', id: 'topspeed', title: 'Top speed vs Bolt', hook: 'My top speed vs Usain Bolt\'s 44.7 km/h.', cam: 'environment', model: 'full',
   gates: 2, gateNames: ['first cone', 'second cone'], gateLabels: ['A', 'B'],
   settings: [{ k: 'dist', label: 'Distance between the cones (m)', def: 5 }],
   setup: ['Put two cones 5 m apart in a straight line. Run past them, not toward the phone.', 'Phone on a tripod side on, 8 to 10 m back, so both cones and a few metres either side are in the picture.', 'Press Set lines and tap each cone on the screen.', 'Start 15 to 20 m before the first cone and be at full speed through both. The app times your hips between the lines.'],
@@ -197,7 +201,7 @@ topspeed: {
       const ct = crossed(st.prevX, x, st.target, st.prevT, t);
       if (ct != null) {
         const dt = ct - st.t0; st.kmh = S.dist / dt * 3.6; st.dt = dt; st.phase = 'done'; st.resAt = t;
-        if (!st.best || st.kmh > st.best) st.best = st.kmh; say(st.kmh.toFixed(1) + ' kilometres per hour');
+        if (!st.best || st.kmh > st.best) st.best = st.kmh; say(st.kmh.toFixed(1) + ' kilometres per hour'); E.log(st.kmh, 'km/h');
       } else if (t - st.t0 > 4) st.phase = 'ready';
     }
     st.prevX = x; st.prevT = t;
@@ -219,7 +223,7 @@ topspeed: {
 
 /* 6 ---------------------------------------------------------------- */
 ghost: {
-  id: 'ghost', title: 'Bolt ghost race', hook: 'I raced Usain Bolt\'s ghost over 10 m.', cam: 'environment', model: 'full',
+  cat: 'Speed', id: 'ghost', title: 'Bolt ghost race', hook: 'I raced Usain Bolt\'s ghost over 10 m.', cam: 'environment', model: 'full',
   gates: 2, gateNames: ['start cone', 'finish cone'], gateLabels: ['START', 'FINISH'],
   settings: [{ k: 'dist', label: 'Race distance (m)', type: 'select', options: [10, 20, 30], def: 10 }],
   setup: ['Put a cone on the start line and one at 10 m. Run across the picture, not toward the phone.', 'Phone on a tripod side on, far enough back to see both cones (about 8 m for 10 m).', 'Press Set lines and tap the start cone, then the finish cone.', 'Stand at the start line and press Race. On the beep, go. Bolt\'s ghost runs his real Berlin 2009 splits beside you.'],
@@ -227,7 +231,7 @@ ghost: {
   reset(E) { clearTimeout(this.timer); this.st = { phase: 'idle', prevX: null, prevT: 0, you: null, t0: null }; },
   start(E) {
     const st = this.st, S = E.S; if (!S.gates || S.gates.length < 2) { E.toast('Set the lines first'); return; }
-    clearTimeout(this.timer); Object.assign(st, { phase: 'marks', you: null, t0: null, startX: null, fs: false });
+    clearTimeout(this.timer); Object.assign(st, { phase: 'marks', you: null, t0: null, startX: null, fs: false, path: [] });
     say('On your marks'); this.timer = setTimeout(() => { st.phase = 'set'; say('Set'); st.startX = null;
       this.timer = setTimeout(() => { if (st.phase !== 'set') return; beep(1000, 0.3, 0.5); st.t0 = E.now(); st.phase = 'run'; }, 1600 + Math.random() * 1000); }, 2600);
   },
@@ -238,10 +242,10 @@ ghost: {
     if (ok) { st.hipX = x; st.leg = (dist(P[23], P[27]) + dist(P[24], P[28])) / 2 || st.leg; st.feetY = Math.max(P[27].y, P[28].y); }
     if (st.phase === 'set' && ok) { if (st.startX == null) st.startX = x; else if ((x - st.startX) * dir > (st.leg || E.W * 0.05) * 0.35) { st.phase = 'idle'; clearTimeout(this.timer); say('False start'); E.toast('False start! Press Race again', 2500); } }
     if (st.phase === 'run') {
-      const el = E.now() - st.t0;
+      const el = E.now() - st.t0; if (ok && st.you == null) st.path.push([Math.round(el * 1000) / 1000, Math.round((x - gA) / (gB - gA) * 1000) / 1000]);
       if (ok && st.you == null) { const ct = crossed(st.prevX, x, gB, st.prevT, t); if (ct != null) { st.you = el - (t - ct); beep(1400, 0.06); } }
       const bt = BOLT_TIME[S.dist];
-      if (el > Math.max(bt, st.you || 0) + 0.4 && st.you != null) { st.phase = 'done'; const gap = st.you - bt; say('You ' + st.you.toFixed(2) + '. Bolt ' + bt.toFixed(2)); st.gap = gap; }
+      if (el > Math.max(bt, st.you || 0) + 0.4 && st.you != null) { st.phase = 'done'; const gap = st.you - bt; say('You ' + st.you.toFixed(2) + '. Bolt ' + bt.toFixed(2)); st.gap = gap; E.log(st.you, 's', 'low'); store.set('moves:ghostlast', { d: S.dist, you: st.you, path: st.path || [] }); }
       if (el > 15) { st.phase = 'idle'; E.toast('No finish seen. Press Race again'); }
     }
     st.prevX = x; st.prevT = t;

@@ -26,9 +26,9 @@
 <div id="saveSheet"><div class="box"><p>Your video is ready.</p><button id="saveBtn" class="go">Save or share</button><button id="closeSave">Close</button></div></div>
 <script type="module">
 import { run } from './engine.js';
-import { APPS } from './apps.js';
+import { ALL } from './all.js';
 const id = new URLSearchParams(location.search).get('a') || 'pullup';
-const app = APPS[id];
+const app = ALL[id];
 if (!app) location.href = './';
 await document.fonts.load("800 20px 'Shantell Sans'").catch(() => {});
 run(app);

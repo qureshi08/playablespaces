@@ -14,14 +14,19 @@
 <body>
 <div class="wrap">
   <h1>Moves</h1>
-  <p class="sig">Anas Qureshi</p>
+  <p class="sig">Anas Qureshi · <span id="count">50</span> training apps</p>
   <div class="list" id="list"></div>
   <div class="tip"><b>On iPhone:</b> tap Share, then Add to Home Screen, so Moves opens like an app. Put the phone on a tripod, press Rec, then train. The hook shows on screen for the first seconds of every video.</div>
 </div>
 <script type="module">
-import { APPS } from './apps.js';
-document.getElementById('list').innerHTML = Object.values(APPS).map(a =>
-  `<a class="app" href="app.html?a=${a.id}"><h2>${a.title}</h2><p class="hook">“${a.hook}”</p><p>${a.setup[0]}</p></a>`).join('');
+import { ALL, CATS } from './all.js';
+const apps = Object.values(ALL);
+document.getElementById('count').textContent = apps.length;
+document.getElementById('list').innerHTML = CATS.map(cat => {
+  const inCat = apps.filter(a => a.cat === cat); if (!inCat.length) return '';
+  return `<h3 class="cat">${cat}</h3>` + inCat.map(a =>
+    `<a class="app" href="app.html?a=${a.id}"><h2>${a.title}</h2><p class="hook">“${a.hook}”</p><p>${a.setup[0]}</p></a>`).join('');
+}).join('');
 </script>
 </body>
 </html>
