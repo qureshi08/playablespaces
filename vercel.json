@@ -1,6 +1,8 @@
 {
   "redirects": [
-    { "source": "/moves", "destination": "/moves/", "permanent": false }
+    { "source": "/bodymark", "destination": "/bodymark/", "permanent": false },
+    { "source": "/moves", "destination": "/bodymark/", "permanent": false },
+    { "source": "/moves/:path*", "destination": "/bodymark/:path*", "permanent": false }
   ],
   "rewrites": [
     { "source": "/:room([a-z0-9-]+)", "destination": "/pages/:room.html" }

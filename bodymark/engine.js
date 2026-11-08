@@ -1,4 +1,4 @@
-// Moves engine: camera, body / face / ball tracking, voice, hook card, screen recording, results history.
+// Bodymark engine: camera, body / face / ball tracking, voice, hook card, screen recording, results history.
 // Every app in apps.js and apps2.js is a small object; this file does the shared work.
 import { FilesetResolver, PoseLandmarker, FaceLandmarker, ObjectDetector } from 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs';
 
@@ -10,7 +10,7 @@ const MODELS = {
   face: MP + 'face_landmarker/face_landmarker/float16/1/face_landmarker.task',
   ball: MP + 'object_detector/efficientdet_lite0/float16/1/efficientdet_lite0.tflite',
 };
-export const BRAND = 'Moves';
+export const BRAND = 'bodymark';
 const NO_UNIT_SPACE = ['%'];
 export function fmtVal(v, unit = '') {
   if (unit === 's') return v.toFixed(2) + ' s';
@@ -20,7 +20,11 @@ export function fmtVal(v, unit = '') {
   if (unit === 'deg') return Math.round(v) + '°';
   return (Math.abs(v) >= 100 ? Math.round(v) : Math.round(v * 10) / 10) + (NO_UNIT_SPACE.includes(unit) ? '' : ' ') + unit;
 }
-export const C = { paper: '#F5F0E6', card: '#FBF7EE', ind: '#243A7A', ink: '#1B2547', mad: '#C8452A', wi: '#9DB3E2', saf: '#F2B848', wm: '#E58A6B' };
+// Bodymark palette (brand board 2026-11-09). Old names kept so every app picks up the new colours:
+// ind = violet (brand), mad = coral (beat me, ghost, hard mode), saf = yellow (rank only), wi = light violet, paper = white text on dark
+export const C = { paper: '#FFFFFF', card: '#FFFFFF', ind: '#5B2EFF', ink: '#12101F', mad: '#FF5A36', wi: '#B9A6FF', saf: '#FFD23F', wm: '#FF8A6B', violet: '#5B2EFF', yellow: '#FFD23F', coral: '#FF5A36' };
+const fontFor = (size, weight) => size >= 8 ? `900 ${size}px 'Archivo', sans-serif` : `${Math.max(700, weight)} ${size}px 'Nunito', sans-serif`;
+function setFont(g, px, size, weight) { g.font = fontFor(px, weight).replace(String(px) + 'px', px + 'px'); if ('fontStretch' in g) g.fontStretch = size >= 8 ? 'condensed' : 'normal'; }
 export const BONES = [[11,12],[11,13],[13,15],[12,14],[14,16],[11,23],[12,24],[23,24],[23,25],[25,27],[24,26],[26,28],[27,31],[28,32],[27,29],[28,30]];
 
 /* ---------- small maths helpers apps use ---------- */
@@ -60,20 +64,22 @@ function unlockAudio() {
 /* ---------- drawing helpers (all sizes in units of U = short side / 100) ---------- */
 function rrect(g, x, y, w, h, r) { g.beginPath(); g.roundRect ? g.roundRect(x, y, w, h, r) : g.rect(x, y, w, h); }
 export function panel(g, E, x, y, w, h, fill = C.card) {
-  g.save(); g.globalAlpha = 0.93; g.fillStyle = fill; rrect(g, x, y, w, h, E.U * 2.2); g.fill(); g.globalAlpha = 1;
-  g.strokeStyle = C.ind; g.lineWidth = E.U * 0.55; rrect(g, x, y, w, h, E.U * 2.2); g.stroke(); g.restore();
+  g.save(); g.shadowColor = 'rgba(18,16,31,.25)'; g.shadowBlur = E.U * 3; g.shadowOffsetY = E.U * 0.8;
+  g.globalAlpha = 0.96; g.fillStyle = fill; rrect(g, x, y, w, h, E.U * 3.4); g.fill(); g.restore();
 }
+// numbers and headlines (size 8 and up) in condensed Archivo Black, everything else in rounded Nunito
 export function text(g, E, s, x, y, size, col = C.ink, weight = 800, align = 'center') {
-  g.font = `${weight} ${size * E.U}px 'Shantell Sans', cursive`; g.fillStyle = col; g.textAlign = align; g.textBaseline = 'middle'; g.fillText(s, x, y);
+  setFont(g, size * E.U, size, weight); g.fillStyle = col; g.textAlign = align; g.textBaseline = 'middle'; g.fillText(s, x, y);
 }
-export function measure(g, E, s, size, weight = 800) { g.font = `${weight} ${size * E.U}px 'Shantell Sans', cursive`; return g.measureText(s).width; }
+export function measure(g, E, s, size, weight = 800) { setFont(g, size * E.U, size, weight); return g.measureText(s).width; }
+export function scribble(g, E, s, x, y, size, col = C.coral, rot = -0.06) { g.save(); g.translate(x, y); g.rotate(rot); if ('fontStretch' in g) g.fontStretch = 'normal'; g.font = `800 ${size * E.U}px 'Shantell Sans', cursive`; g.fillStyle = col; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(s, 0, 0); g.restore(); }
 // a card that fits its text: lines = [[text, size, colour, weight], ...]
-export function card(g, E, lines, x, y, align = 'center') {
+export function card(g, E, lines, x, y, align = 'center', fill) {
   const pad = E.U * 3; let w = 0, h = pad;
   lines.forEach(([s, size, , wt]) => { w = Math.max(w, measure(g, E, s, size, wt || 800)); h += size * E.U * 1.25; });
   w += pad * 2; h += pad * 0.6;
   const left = align === 'center' ? x - w / 2 : align === 'right' ? x - w : x;
-  panel(g, E, left, y, w, h);
+  panel(g, E, left, y, w, h, fill);
   let cy = y + pad;
   lines.forEach(([s, size, col, wt]) => { cy += size * E.U * 0.62; text(g, E, s, left + w / 2, cy, size, col || C.ink, wt || 800); cy += size * E.U * 0.63; });
   return { x: left, y, w, h };
@@ -87,8 +93,8 @@ export function wrap(g, E, s, size, maxW) {
   if (line) out.push(line); return out;
 }
 // big score card used by most apps: label, value, optional small line
-export function scoreCard(g, E, label, value, sub, x = E.U * 5, y = E.H * 0.6, col = C.mad, align = 'left') {
-  const lines = [[label, 4, C.ink, 600], [value, 13, col]]; if (sub) lines.push([sub, 3.6, C.ind, 600]);
+export function scoreCard(g, E, label, value, sub, x = E.U * 5, y = E.H * 0.6, col = C.violet, align = 'left') {
+  const lines = [[label.toUpperCase(), 3.4, '#6b6880', 900], [value, 14, col === C.mad ? C.violet : col]]; if (sub) lines.push([sub, 3.6, C.ink, 700]);
   return card(g, E, lines, x, y, align);
 }
 export function bigNote(g, E, s, col = C.ind, y = E.H * 0.24) { const lines = wrap(g, E, s, 5.4, E.W * 0.86); return card(g, E, lines.map(l => [l, 5.4, col]), E.W / 2, y); }
@@ -98,6 +104,30 @@ export function meter(g, E, frac, mark, x, y, h, label) { // vertical meter with
   const my = y + h - (h - E.U * 2) * mark - E.U; g.strokeStyle = C.mad; g.lineWidth = E.U * 0.6; g.beginPath(); g.moveTo(x - E.U, my); g.lineTo(x + w + E.U, my); g.stroke();
   if (label) text(g, E, label, x + w / 2, y + h + E.U * 3, 3, C.paper, 700);
 }
+
+/* ---------- mascot: stick figure from the tracked body points, with a light line boil ---------- */
+export function mascot(g, o) {
+  const s = o.s || 1, x = o.x, y = o.y, T = 60 * s, U = 34 * s, G = 40 * s, R = 19 * s, b = o.b || 0, bf = Math.floor(performance.now() / 80) % 3;
+  const jit = (a, c) => { const v = Math.sin(a * 0.37 + c * 1.91 + bf * 13.1) * 43758.5453; return (v - Math.floor(v) - 0.5) * 2.4 * s; };
+  const L = (x1, y1, x2, y2) => { g.beginPath(); g.moveTo(x1, y1); g.quadraticCurveTo((x1 + x2) / 2 + jit(x1, y2), (y1 + y2) / 2 + jit(y1, x2), x2, y2); g.stroke(); };
+  const Dv = a => [Math.sin(a), Math.cos(a)];
+  g.save(); g.strokeStyle = o.col || C.ink; g.lineWidth = (o.lw || 13) * s; g.lineCap = 'round'; g.lineJoin = 'round';
+  const nk = [x + Math.sin(b) * T, y - Math.cos(b) * T], hd = [nk[0] + Math.sin(b) * R * 1.6, nk[1] - Math.cos(b) * R * 1.6];
+  const lim = (p, a1, a2, l) => { const d1 = Dv(a1), e = [p[0] + d1[0] * l, p[1] + d1[1] * l], d2 = Dv(a2); L(p[0], p[1], e[0], e[1]); L(e[0], e[1], e[0] + d2[0] * l, e[1] + d2[1] * l); };
+  L(x, y, nk[0], nk[1]);
+  lim(nk, o.la ?? -0.4, o.la2 ?? o.la ?? -0.4, U); lim(nk, o.ra ?? 0.4, o.ra2 ?? o.ra ?? 0.4, U); lim([x, y], o.ll ?? -0.2, o.ll2 ?? o.ll ?? -0.2, G); lim([x, y], o.rl ?? 0.2, o.rl2 ?? o.rl ?? 0.2, G);
+  g.beginPath(); g.arc(hd[0], hd[1], R, 0, 7); g.fillStyle = o.col || C.ink; g.fill(); g.restore();
+}
+// fun identity label from a percentile, per test (bad results get a friendly label too, so they are shareable)
+const LABELS = {
+  vjump: ['Glued to the floor', 'Hopper', 'Springy', 'Kangaroo legs', 'Rocket legs'],
+  balance: ['Wobbly', 'Steady-ish', 'Steady', 'Rock solid', 'Statue mode'],
+  reaction: ['Sleepy thumbs', 'Normal human', 'Quick', 'Lightning hands', 'Ninja reflexes'],
+  plank: ['Jelly core', 'Holding on', 'Solid', 'Iron core', 'Plank lord'],
+  bodyage: ['Time to move more', 'About your age', 'Younger than you look', 'Way younger', 'Ageless'],
+  _: ['Just started', 'Getting there', 'Solid', 'Strong', 'Elite'],
+};
+export const labelFor = (id, p) => (LABELS[id] || LABELS._)[p >= 90 ? 4 : p >= 70 ? 3 : p >= 45 ? 2 : p >= 20 ? 1 : 0];
 
 /* ---------- the engine ---------- */
 export async function run(app) {
@@ -112,10 +142,10 @@ export async function run(app) {
     app, S, save, U: 4, W: 720, H: 1280, P: null, Sm: null, Ps: [], F: null, B: {}, ball: null, t: 0, ppm: null,
     facing: S.facing || app.cam || 'environment', hookUntil: 0, msg: '', gateMode: 0, recording: false, say, beep, ME,
     now: () => performance.now() / 1000,
-    log: (v, unit, better = 'high', rank) => {
+    log: (v, unit, better = 'high', rank, extra) => {
       logResult(app.id, v, unit, better);
       // keep the result and a snapshot of this moment for the share card
-      E.result = { v, unit, better, rank };
+      E.result = { v, unit, better, rank, extra };
       // snapshot a moment later, so the photo shows the score on screen
       setTimeout(() => { try { const s = document.createElement('canvas'), k = 540 / Math.max(cv.width, cv.height); s.width = Math.round(cv.width * k); s.height = Math.round(cv.height * k); s.getContext('2d').drawImage(cv, 0, 0, s.width, s.height); E.snap = s; } catch (e) {} }, 180);
       shareBtn.style.display = '';
@@ -140,7 +170,7 @@ export async function run(app) {
     form.appendChild(lab);
   });
   form.addEventListener('change', e => { const k = e.target.dataset.k; if (k) { const v = e.target.value; S[k] = isNaN(+v) ? v : +v; save(); app.reset && app.reset(E); } });
-  document.title = app.title + ' · Moves';
+  document.title = app.title + ' · Bodymark';
   if (app.noCamera) { $('#startState').textContent = 'No camera needed. Turn the sound on.'; }
 
   /* bottom bar buttons */
@@ -171,15 +201,34 @@ export async function run(app) {
     const r = E.result; if (!r) return;
     const link = location.origin + location.pathname + '?a=' + app.id + '&beat=' + (Math.round(r.v * 100) / 100) + '&u=' + encodeURIComponent(r.unit || '');
     const W = 1080, H = 1920, c = document.createElement('canvas'); c.width = W; c.height = H; const x = c.getContext('2d'), F = { U: 10.8, W, H };
-    x.fillStyle = C.paper; x.fillRect(0, 0, W, H);
-    text(x, F, BRAND, W / 2, 120, 7, C.ind); text(x, F, app.title, W / 2, 210, 6, C.ink, 700);
-    if (E.snap) { const s = E.snap, k = Math.min(860 / s.width, 900 / s.height), w = s.width * k, h = s.height * k; x.save(); x.beginPath(); x.roundRect((W - w) / 2, 290, w, h, 40); x.clip(); x.drawImage(s, (W - w) / 2, 290, w, h); x.restore(); x.lineWidth = 8; x.strokeStyle = C.ind; x.beginPath(); x.roundRect((W - w) / 2, 290, w, h, 40); x.stroke(); }
-    text(x, F, fmtVal(r.v, r.unit), W / 2, 1330, 17, C.mad);
-    let y = 1430;
-    if (r.rank) wrap(x, F, r.rank, 4.4, W * 0.86).forEach(l => { text(x, F, l, W / 2, y, 4.4, C.ind, 800); y += 58; });
-    y += 30; wrap(x, F, '“' + app.hook + '”', 4.6, W * 0.84).slice(0, 2).forEach(l => { text(x, F, l, W / 2, y, 4.6, C.ink, 700); y += 60; });
-    text(x, F, 'Beat me. Free, no app to install:', W / 2, 1700, 4.2, C.ink, 600);
-    text(x, F, location.host + location.pathname.replace(/app\.html$/, ''), W / 2, 1770, 4.4, C.ind, 800);
+    const bg = app.group === 'hard' ? C.coral : app.group === 'play' ? C.ink : C.violet, acc = C.yellow;
+    x.fillStyle = bg; x.fillRect(0, 0, W, H);
+    x.globalAlpha = 0.12; x.beginPath(); x.arc(W * 0.9, H * 0.2, 420, 0, 7); x.fillStyle = '#fff'; x.fill(); x.globalAlpha = 1;
+    text(x, F, BRAND, W / 2, 330, 4.4, '#fff', 900); text(x, F, app.title.toUpperCase(), W / 2, 450, 4.8, '#fff', 900);
+    // number and unit as one centred group
+    const val = fmtVal(r.v, r.unit), sp = val.lastIndexOf(' '), num = sp > 0 ? val.slice(0, sp) : val, unit = sp > 0 ? val.slice(sp + 1) : '';
+    let ns = 37; while (measure(x, F, num, ns) > W * 0.78 && ns > 18) ns -= 1;
+    const nw = measure(x, F, num, ns), uw = unit ? measure(x, F, unit, 7.4, 900) + 24 : 0, nx = W / 2 - (nw + uw) / 2;
+    text(x, F, num, nx, 760, ns, '#fff', 900, 'left'); if (unit) text(x, F, unit, nx + nw + 24, 840, 7.4, '#fff', 900, 'left');
+    let y = 1000; const m = r.rank && /Better than (\d+)% of (.*)/.exec(r.rank);
+    if (r.extra && r.extra.pill) {
+      const pw = measure(x, F, r.extra.pill, 5.6, 900) + 120;
+      x.beginPath(); x.roundRect(W / 2 - pw / 2, y, pw, 120, 60); x.fillStyle = acc; x.fill(); text(x, F, r.extra.pill, W / 2, y + 62, 5.6, C.ink, 900);
+      y += 200; if (r.extra.who) { text(x, F, r.extra.who, W / 2, y, 3.6, '#fff', 700); y += 90; }
+      if (r.extra.label) { text(x, F, r.extra.label, W / 2, y, 6, '#fff', 900); y += 40; }
+    } else if (m) {
+      const p = +m[1], pill = 'TOP ' + Math.max(1, 100 - p) + '%', pw = measure(x, F, pill, 6, 900) + 120;
+      x.beginPath(); x.roundRect(W / 2 - pw / 2, y, pw, 120, 60); x.fillStyle = acc; x.fill(); text(x, F, pill, W / 2, y + 62, 6, C.ink, 900);
+      y += 180; x.beginPath(); x.roundRect(150, y, 780, 22, 11); x.fillStyle = 'rgba(255,255,255,.35)'; x.fill();
+      const mx = 150 + 780 * p / 100; x.beginPath(); x.arc(mx, y + 11, 34, 0, 7); x.fillStyle = acc; x.fill(); x.lineWidth = 8; x.strokeStyle = bg; x.stroke();
+      y += 100; wrap(x, F, 'of ' + m[2], 3.6, W * 0.8).slice(0, 2).forEach(l => { text(x, F, l, W / 2, y, 3.6, '#fff', 700); y += 48; });
+      y += 50; text(x, F, labelFor(app.id, p), W / 2, y, 6, '#fff', 900); y += 40;
+    } else if (r.rank) { wrap(x, F, r.rank, 4.4, W * 0.8).slice(0, 2).forEach(l => { text(x, F, l, W / 2, y + 40, 4.4, '#fff', 900); y += 60; }); y += 80; }
+    else { wrap(x, F, '“' + app.hook + '”', 4.4, W * 0.8).slice(0, 2).forEach(l => { text(x, F, l, W / 2, y + 40, 4.4, '#fff', 800); y += 60; }); y += 80; }
+    y = Math.max(y + 50, 1380);
+    mascot(x, { x: W / 2 - 230, y: y + 40, s: 0.85, col: acc, la: -2.5, ra: 2.5, ll: -0.35, rl: 0.35 });
+    scribble(x, F, 'beat me!', W / 2 + 60, y + 60, 7.8, acc);
+    text(x, F, location.host + location.pathname.replace(/app\.html$/, ''), W / 2, y + 200, 3.6, '#fff', 800);
     const blob = await new Promise(res => c.toBlob(res, 'image/png'));
     const file = new File([blob], app.id + '-score.png', { type: 'image/png' });
     const msg = `${app.title}: ${fmtVal(r.v, r.unit)}. Beat me: ${link}`;
@@ -351,9 +400,9 @@ export async function run(app) {
     else { g.save(); if (mirror) { g.translate(W, 0); g.scale(-1, 1); } g.drawImage(video, 0, 0, W, H); g.restore(); }
     const people = app.people > 1 ? E.Ps : (E.Sm ? [E.Sm] : []);
     if (app.skeleton !== false) people.forEach(P => {
-      g.lineCap = 'round'; g.strokeStyle = C.saf; g.lineWidth = U * 0.9;
+      g.lineCap = 'round'; g.strokeStyle = C.yellow; g.lineWidth = U * 1.1;
       BONES.forEach(([a, b]) => { if (P[a].v > 0.4 && P[b].v > 0.4) { g.beginPath(); g.moveTo(P[a].x, P[a].y); g.lineTo(P[b].x, P[b].y); g.stroke(); } });
-      [0, 11, 12, 13, 14, 15, 16, 23, 24, 25, 26, 27, 28].forEach(i => { if (P[i].v > 0.4) { g.beginPath(); g.arc(P[i].x, P[i].y, U * 1.1, 0, 7); g.fillStyle = C.mad; g.fill(); g.lineWidth = U * 0.3; g.strokeStyle = C.paper; g.stroke(); } });
+      [0, 11, 12, 13, 14, 15, 16, 23, 24, 25, 26, 27, 28].forEach(i => { if (P[i].v > 0.4) { g.beginPath(); g.arc(P[i].x, P[i].y, U * 1.1, 0, 7); g.fillStyle = C.violet; g.fill(); g.lineWidth = U * 0.45; g.strokeStyle = '#fff'; g.stroke(); } });
     });
     if (app.ball && E.ball) { g.strokeStyle = C.mad; g.lineWidth = U * 0.8; g.beginPath(); g.arc(E.ball.x, E.ball.y, E.ball.r * 1.2, 0, 7); g.stroke(); }
     if (app.gates && S.gates && S.gates.length) S.gates.forEach((gx, i) => { const x = gx * W; dashed(g, E, x, H * 0.08, x, H * 0.97, C.mad, 0.8); text(g, E, app.gateLabels[i], x, H * 0.06, 3.6, C.mad); });
@@ -363,7 +412,7 @@ export async function run(app) {
     try { app.draw && app.draw(g, E); } catch (e) { console.error(e); }
     if (E.beat != null) card(g, E, [[E.beatWon ? 'Challenge beaten ✓' : 'Beat ' + fmtVal(E.beat, E.beatUnit), 4.2, E.beatWon ? C.ind : C.mad]], W - U * 4, H * 0.2, 'right');
     if (E.msg) card(g, E, wrap(g, E, E.msg, 3.6, W * 0.85).map(l => [l, 3.6, C.ink, 600]), W / 2, H * 0.86);
-    if (E.now() < E.hookUntil) { const lines = wrap(g, E, app.hook, 6.4, W * 0.84); card(g, E, lines.map(l => [l, 6.4, C.mad]), W / 2, H * 0.1); }
-    text(g, E, 'Anas Qureshi', W - U * 3, H - U * 3, 3.2, C.mad, 700, 'right');
+    if (E.now() < E.hookUntil) { const lines = wrap(g, E, app.hook, 6, W * 0.84); card(g, E, lines.map(l => [l, 6, '#fff', 900]), W / 2, H * 0.1, 'center', C.violet); }
+    g.save(); g.shadowColor = 'rgba(0,0,0,.45)'; g.shadowBlur = U * 1.5; text(g, E, BRAND, W - U * 3, H - U * 3.5, 4.2, '#fff', 900, 'right'); g.restore();
   }
 }

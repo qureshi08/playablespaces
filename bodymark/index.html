@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Bodymark">
+<meta name="theme-color" content="#5B2EFF">
+<meta name="description" content="How does your body rank? Free camera tests that show where you rank against real people your age. No app, video stays on your phone.">
+<meta property="og:title" content="Bodymark: how does your body rank?">
+<meta property="og:description" content="Free camera tests. Jump, balance, reaction, push ups and more, ranked against people your age. Then dare a friend.">
+<title>Bodymark: how does your body rank?</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,700..900&family=Nunito:wght@600;700;800;900&family=Shantell+Sans:wght@800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body class="home">
+<header class="hero">
+  <div class="wrap">
+    <div class="brand"><canvas id="logo" width="460" height="120"></canvas></div>
+    <h1>How does your body rank?</h1>
+    <p>Quick camera tests that show where you rank against real people your age. Then dare a friend to beat you.</p>
+    <p class="small">Free. No app, no sign up. Video never leaves your phone.</p>
+  </div>
+</header>
+<main class="wrap">
+  <a class="bodyage" href="app.html?a=bodyage">
+    <span class="eyebrow">BODY AGE</span>
+    <h2>How old is your body?</h2>
+    <p>3 quick tests, about 3 minutes. Balance, jump and the sit to stand test.</p>
+    <span class="go">Start →</span>
+    <canvas id="bmascot" width="240" height="300"></canvas>
+  </a>
+  <h3 class="sec">Benchmarks <span>one test, one rank</span></h3>
+  <div class="tiles" id="bench"></div>
+  <details class="more"><summary>More benchmarks</summary><div class="list" id="benchMore"></div></details>
+  <h3 class="sec hard">Hard mode <span>for people who train</span></h3>
+  <div class="list" id="hard"></div>
+  <h3 class="sec play">Play together <span>games for friends and family</span></h3>
+  <div class="list" id="play"></div>
+  <p class="note">Tests marked beta are rougher: a phone camera films at about 30 frames a second, so they cannot be timed as precisely. Body Age and every rank are wellness estimates, not a diagnosis.</p>
+  <div class="tip"><b>On iPhone:</b> tap Share, then Add to Home Screen, so Bodymark opens like an app.</div>
+  <p class="foot">Made by Anas Qureshi</p>
+</main>
+<script type="module">
+import { ALL, TOP_BENCH } from './all.js';
+import { mascot, C } from './engine.js';
+const apps = Object.values(ALL);
+const beta = a => a.beta ? ' <span class="beta">beta</span>' : '';
+const row = a => `<a class="row ${a.group}" href="app.html?a=${a.id}"><b>${a.title}${beta(a)}</b><span>${a.hook}</span></a>`;
+const COLORS = ['v', 'v', 'y', 'v', 'c', 'v'];
+document.getElementById('bench').innerHTML = TOP_BENCH.map((id, i) => { const a = ALL[id]; return `<a class="tile t-${COLORS[i]}" href="app.html?a=${id}"><b>${a.title}</b><span>${a.hook}</span></a>`; }).join('');
+document.getElementById('benchMore').innerHTML = apps.filter(a => a.group === 'bench' && !TOP_BENCH.includes(a.id)).map(row).join('');
+document.getElementById('hard').innerHTML = apps.filter(a => a.group === 'hard').map(row).join('');
+document.getElementById('play').innerHTML = apps.filter(a => a.group === 'play').map(row).join('');
+// logo and the Body Age mascot, with the line boil
+const lg = document.getElementById('logo').getContext('2d'), bm = document.getElementById('bmascot').getContext('2d');
+await document.fonts.load("900 60px Archivo");
+function draw(now) {
+  const t = now / 1000, p = (t % 1.6) / 1.6, j = p < 0.45 ? Math.sin(p / 0.45 * Math.PI) : 0;
+  lg.clearRect(0, 0, 460, 120); lg.font = "900 96px 'Archivo', sans-serif"; if ('fontStretch' in lg) lg.fontStretch = 'condensed'; lg.fillStyle = '#fff'; lg.textBaseline = 'alphabetic';
+  const wb = lg.measureText('body').width; lg.fillText('body', 0, 98); lg.fillText('mark', wb + 62, 98);
+  mascot(lg, { x: wb + 31, y: 62 - j * 14, s: 0.5, lw: 28, col: C.yellow, la: -2.6, ra: 2.6, ll: j ? -0.5 : -0.25, rl: j ? 0.5 : 0.25 });
+  bm.clearRect(0, 0, 240, 300); const sw = Math.sin(t * 1.7) * 0.06;
+  mascot(bm, { x: 120, y: 190, s: 1.1, b: sw, col: C.ink, la: -1.5, ra: 1.5, ll: sw * 0.5, rl: 1.0, rl2: -0.5 });
+  requestAnimationFrame(draw);
+}
+requestAnimationFrame(draw);
+</script>
+</body>
+</html>

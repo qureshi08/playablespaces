@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#5B2EFF">
+<title>Bodymark</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,700..900&family=Nunito:wght@600;700;800;900&family=Shantell+Sans:wght@800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body class="appbody">
+<div id="stage"><canvas id="cv" width="720" height="1280"></canvas><video id="vid" playsinline muted autoplay></video></div>
+<div id="bar"></div>
+<div id="intro">
+  <div class="top"><div class="inner">
+    <a class="back" href="./">← bodymark</a>
+    <h1 id="title"></h1>
+    <p id="hook" class="hook"></p>
+  </div></div>
+  <div class="body">
+    <ol id="steps"></ol>
+    <div id="settings"></div>
+    <button id="startBtn" class="go">Start</button>
+    <div id="startState">Allow the camera when the browser asks. Turn the sound on for voice cues.</div>
+    <p class="privacy">🔒 Video never leaves your phone. Tracking runs on your device. Nothing is uploaded or stored.</p>
+  </div>
+</div>
+<div id="toast"></div>
+<div id="saveSheet"><div class="box"><p>Your video is ready.</p><button id="saveBtn" class="go">Save or share</button><button id="closeSave">Close</button></div></div>
+<script type="module">
+import { run } from './engine.js';
+import { ALL } from './all.js';
+const id = new URLSearchParams(location.search).get('a') || 'bodyage';
+const app = ALL[id];
+if (!app) location.href = './';
+await Promise.all(["900 20px Archivo", "800 20px Nunito", "800 20px 'Shantell Sans'"].map(f => document.fonts.load(f).catch(() => {})));
+run(app);
+</script>
+</body>
+</html>

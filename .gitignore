@@ -2,4 +2,4 @@ _shots/
 node_modules/
 .vercel/
 _reels/
-moves/_test/
+bodymark/_test/
