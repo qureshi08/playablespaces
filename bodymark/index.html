@@ -17,7 +17,7 @@
 <body class="home">
 <header class="hero">
   <div class="wrap">
-    <div class="brand"><canvas id="logo" width="460" height="170"></canvas></div>
+    <div class="brand"><canvas id="logo" width="560" height="196"></canvas></div>
     <h1>How does your body rank?</h1>
     <p>Quick camera tests that show where you rank against real people your age. Then dare a friend to beat you.</p>
     <p class="small">Free. No app, no sign up. Video never leaves your phone.</p>
@@ -67,9 +67,12 @@ await document.fonts.load("900 60px Archivo");
 function draw(now) {
   const t = now / 1000, p = (t % 1.6) / 1.6, j = p < 0.45 ? Math.sin(p / 0.45 * Math.PI) : 0;
   // the figure jumps between the two words; the canvas is tall enough that its raised hands never touch the top edge
-  lg.clearRect(0, 0, 460, 170); lg.font = "900 96px 'Archivo', sans-serif"; if ('fontStretch' in lg) lg.fontStretch = 'condensed'; lg.fillStyle = '#fff'; lg.textBaseline = 'alphabetic';
-  const wb = lg.measureText('body').width; lg.fillText('body', 0, 150); lg.fillText('mark', wb + 70, 150);
-  mascot(lg, { x: wb + 35, y: 102 - j * 16, s: 0.6, lw: 17, col: C.yellow, la: -2.15, ra: 2.15, ll: j ? -0.5 : -0.22, ll2: j ? 0.3 : -0.22, rl: j ? 0.5 : 0.22, rl2: j ? -0.3 : 0.22 });
+  // the whole logo (body + gap + mark) is measured and scaled to fit the canvas width, so no letter can run off an edge
+  const LW = lg.canvas.width; lg.setTransform(1, 0, 0, 1, 0, 0); lg.clearRect(0, 0, LW, lg.canvas.height);
+  lg.font = "900 96px 'Archivo', sans-serif"; if ('fontStretch' in lg) lg.fontStretch = 'condensed'; lg.fillStyle = '#fff'; lg.textBaseline = 'alphabetic';
+  const wb = lg.measureText('body').width, wm = lg.measureText('mark').width, gap = 70, tot = wb + gap + wm + 8, k = Math.min(1, LW / tot);
+  lg.setTransform(k, 0, 0, k, 4 * k, 150 * (1 - k)); lg.fillText('body', 0, 150); lg.fillText('mark', wb + gap, 150);
+  mascot(lg, { x: wb + gap / 2, y: 102 - j * 16, s: 0.6, lw: 17, col: C.yellow, la: -2.15, ra: 2.15, ll: j ? -0.5 : -0.22, ll2: j ? 0.3 : -0.22, rl: j ? 0.5 : 0.22, rl2: j ? -0.3 : 0.22 });
   bm.clearRect(0, 0, 240, 300); const sw = Math.sin(t * 1.7) * 0.06;
   mascot(bm, { x: 120, y: 190, s: 1.1, b: sw, col: C.ink, la: -1.5, ra: 1.5, ll: sw * 0.5, rl: 1.0, rl2: -0.5 });
   requestAnimationFrame(draw);

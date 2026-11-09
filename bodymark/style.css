@@ -12,7 +12,7 @@ button.rec.on{background:var(--coral);color:#fff}
 
 /* home */
 .hero{background:var(--violet);color:#fff;border-radius:0 0 36px 36px;padding:22px 0 34px}
-.hero canvas{width:230px;height:85px;display:block}
+.hero canvas{width:280px;height:98px;display:block}
 .hero h1{font-size:clamp(46px,12vw,84px);line-height:.92;margin:18px 0 12px}
 .hero p{margin:0 0 6px;font-weight:700;font-size:18px;max-width:560px}
 .hero .small{opacity:.85;font-size:15px}
