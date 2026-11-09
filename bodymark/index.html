@@ -6,70 +6,99 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Bodymark">
 <meta name="theme-color" content="#5B2EFF">
-<meta name="description" content="an ai coach that lives in your phone. lean it on your shoe, it watches your push ups, counts only real reps and talks to you. free, no app.">
+<meta name="description" content="an ai coach that lives in your phone. it watches your push ups and only counts real reps. free, no app.">
 <meta property="og:title" content="bodymark: an ai coach that lives in your phone">
-<meta property="og:description" content="it watches your push ups, counts only real reps, and calls out every half rep. free, no app.">
+<meta property="og:description" content="it watches your push ups and only counts real reps. free, no app.">
 <title>bodymark: an ai coach that lives in your phone</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,700..900&family=Nunito:wght@600;700;800;900&family=Shantell+Sans:wght@800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
+<style>
+/* Home, the heyclicky pattern: show the real product, one ask, nothing else */
+body.h2{background:var(--violet);color:#fff;min-height:100dvh;padding-bottom:calc(96px + env(safe-area-inset-bottom))}
+.h2 .top{max-width:520px;margin:0 auto;padding:14px 20px 0}
+.h2 .logo{width:150px;height:auto;display:block}
+.h2 h1{font-family:'Archivo',sans-serif;font-weight:900;font-stretch:75%;font-size:clamp(40px,11vw,60px);line-height:.95;margin:14px 0 8px}
+.h2 .sub{font-weight:800;font-size:18px;margin:0 0 18px;opacity:.95}
+.phone{width:min(78vw,300px);aspect-ratio:9/16;margin:0 auto;border-radius:38px;background:#0d0d12;padding:10px;box-shadow:0 24px 60px rgba(18,16,31,.45),inset 0 0 0 2px rgba(255,255,255,.08)}
+.phone canvas{width:100%;height:100%;display:block;border-radius:30px}
+.h2 .facts{text-align:center;font-weight:800;font-size:14px;opacity:.85;margin:16px 0 4px}
+.h2 .next{text-align:center;font-weight:800;font-size:14px;margin:6px 0 0;opacity:.85}
+.h2 .next b{color:var(--yellow)}
+.h2 .foot{text-align:center;color:rgba(255,255,255,.6);font-size:13px;margin:22px 0 0}
+.cta{position:fixed;left:0;right:0;bottom:0;padding:12px 16px calc(12px + env(safe-area-inset-bottom));background:linear-gradient(transparent,rgba(18,16,31,.35) 40%)}
+.cta a{display:block;max-width:520px;margin:0 auto;text-align:center;text-decoration:none;background:var(--yellow);color:var(--ink);font-family:'Archivo',sans-serif;font-weight:900;font-stretch:85%;font-size:24px;padding:16px;border-radius:99px;box-shadow:0 10px 30px rgba(18,16,31,.35)}
+</style>
 </head>
-<body class="home">
-<!-- One thing, the Clicky way: "an ai buddy that lives on your computer" -> "an ai coach that lives in your phone". One ask. -->
-<header class="hero">
-  <div class="wrap">
-    <div class="brand"><canvas id="logo" width="560" height="196"></canvas></div>
-    <h1>an ai coach that lives in your phone.</h1>
-    <p>lean it on your shoe. it watches your push ups, counts only real reps, and calls out every half rep.</p>
-    <p class="small">free. no app, no sign up. video never leaves your phone.</p>
-  </div>
-</header>
-<main class="wrap">
-  <a class="bodyage big" href="app.html?a=pushups">
-    <canvas class="pv" data-id="pushup" width="400" height="300"></canvas>
-    <span class="eyebrow">TODAY'S COACH</span>
-    <h2>push ups. real reps only.</h2>
-    <p>takes 1 minute. phone on the ground, 2 steps away.</p>
-    <span class="go">start →</span>
-  </a>
-  <div id="drops"></div>
-  <div class="tip"><b>on iphone:</b> tap share, then add to home screen, so bodymark opens like an app.</div>
-  <p class="foot">made by anas qureshi, on his morning runs ^ ω ^</p>
-</main>
+<body class="h2">
+<div class="top">
+  <canvas class="logo" id="logo" width="560" height="196"></canvas>
+  <h1>an ai coach that lives in your phone.</h1>
+  <p class="sub">it watches your push ups and only counts real reps.</p>
+  <div class="phone"><canvas id="demo" width="540" height="960"></canvas></div>
+  <p class="facts">free · no app · no sign up · video stays on your phone</p>
+  <p class="next" id="next"></p>
+  <p class="foot">made by anas qureshi</p>
+</div>
+<div class="cta"><a href="app.html?a=pushups" id="go">start push ups →</a></div>
 <script type="module">
-import { ALL, DROPS, released, nextDrop } from './all.js';
+import { nextDrop } from './all.js';
 import { mascot, C, sfx } from './engine.js';
-import { drawDemo } from './demos.js';
-const fmt = d => new Date(d + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }).toLowerCase();
-const out = released().filter(id => id !== 'pushups'), nd = nextDrop();
-let html = '';
-if (nd) {
-  const days = Math.ceil((new Date(nd.date + 'T12:00:00') - new Date()) / 864e5);
-  html += `<h3 class="sec">next drop <span>a new coach every saturday</span></h3>
-  <div class="drop next"><canvas class="pv" data-id="${nd.demo}" width="400" height="300"></canvas><div><span class="eyebrow">DROP ${DROPS.indexOf(nd) + 1} · ${fmt(nd.date)}</span><b>${nd.pitch}</b><span class="soon">${days <= 1 ? 'unlocks tomorrow' : 'unlocks in ' + days + ' days'}</span></div></div>`;
+const nd = nextDrop();
+if (nd) document.getElementById('next').innerHTML = `next coach, ${new Date(nd.date + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }).toLowerCase()}: <b>${nd.pitch}</b>`;
+document.getElementById('go').addEventListener('pointerdown', () => { try { sfx.tap(); } catch (e) {} });
+await document.fonts.load("900 60px Archivo"); await document.fonts.load("800 30px 'Shantell Sans'");
+
+// The demo shows exactly what the coach screen looks like: camera view, the tracked skeleton, the big count,
+// "clean!" or "half rep", and the depth bar with the line you must reach.
+const g = document.getElementById('demo').getContext('2d'), W = 540, H = 960;
+const REPS = [1, 1, 0, 1, 1, 1, 0, 1]; // 1 = full rep, 0 = half rep that gets called out
+function ik(ax, ay, bx, by, l1, l2, sg) { const dx = bx - ax, dy = by - ay, d = Math.max(1, Math.min(Math.hypot(dx, dy), l1 + l2 - 0.01)), a = Math.atan2(dy, dx), k = Math.acos(Math.max(-1, Math.min(1, (l1 * l1 + d * d - l2 * l2) / (2 * l1 * d)))), q = a + sg * k; return [ax + Math.cos(q) * l1, ay + Math.sin(q) * l1]; }
+function font(px, fam = 'Archivo', w = 900) { g.font = `${w} ${px}px '${fam}', sans-serif`; if ('fontStretch' in g) g.fontStretch = fam === 'Archivo' ? 'condensed' : 'normal'; }
+function pill(s, y, px, col = '#fff') { font(px); const w = g.measureText(s).width + 70, h = px * 1.25; g.fillStyle = 'rgba(18,16,31,.72)'; g.beginPath(); g.roundRect(W / 2 - w / 2, y - h / 2, w, h, h / 2); g.fill(); g.fillStyle = col; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(s, W / 2, y + px * 0.05); }
+function frame(now) {
+  const t = now / 1000, P = 1.5, k = Math.floor(t / P), ph = (t % P) / P, rep = REPS[k % REPS.length];
+  // count: full reps so far in this loop
+  let n = 0; for (let i = 0; i < k % REPS.length; i++) n += REPS[i]; if (ph > 0.85 && rep) n++;
+  const depth = (rep ? 1 : 0.42) * Math.sin(Math.min(1, ph / 0.85) * Math.PI);
+  // camera view: dark ground, soft light
+  const bg = g.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, '#3a3f4a'); bg.addColorStop(0.55, '#262a31'); bg.addColorStop(1, '#4b5a3c'); g.fillStyle = bg; g.fillRect(0, 0, W, H);
+  g.fillStyle = 'rgba(255,255,255,.04)'; for (let i = 0; i < 6; i++) g.fillRect(0, 640 + i * 52, W, 2);
+  // the person, side view, drawn like the app draws tracking: yellow lines, violet joints
+  const gy = 700, ang = 0.34 - 0.24 * depth, fx = 490, fy = gy - 10, L = 360;
+  g.fillStyle = 'rgba(255,255,255,.18)'; g.fillRect(20, gy + 6, W - 40, 4); // the ground
+  const sh = [fx - L * Math.cos(ang), fy - L * Math.sin(ang)], hip = [(fx + sh[0]) / 2 + 6, (fy + sh[1]) / 2 + 4], knee = [(fx + hip[0]) / 2, (fy + hip[1]) / 2 + 2];
+  const hand = [sh[0] + 6, gy], el = ik(sh[0], sh[1], hand[0], hand[1], 76, 76, -1), head = [sh[0] - 42 * Math.cos(ang), sh[1] - 42 * Math.sin(ang) - 12];
+  g.lineCap = 'round'; g.lineJoin = 'round'; g.strokeStyle = C.yellow; g.lineWidth = 11;
+  [[fx, fy, knee], [knee[0], knee[1], hip], [hip[0], hip[1], sh], [sh[0], sh[1], el], [el[0], el[1], hand]].forEach(([x, y, b]) => { g.beginPath(); g.moveTo(x, y); g.lineTo(b[0], b[1]); g.stroke(); });
+  g.beginPath(); g.moveTo(sh[0], sh[1]); g.lineTo(head[0], head[1]); g.stroke();
+  [[fx, fy], knee, hip, sh, el, hand, head].forEach(([x, y], i) => { g.beginPath(); g.arc(x, y, i === 6 ? 16 : 10, 0, 7); g.fillStyle = C.violet; g.fill(); g.lineWidth = 4; g.strokeStyle = '#fff'; g.stroke(); });
+  // top: the count, nothing else
+  pill(String(n), 150, 120);
+  // right after each rep: "clean!" or "half rep"
+  if (ph > 0.85 || ph < 0.12) { const ok = ph > 0.85 ? rep : REPS[(k - 1 + REPS.length) % REPS.length]; font(54, 'Shantell Sans', 800); g.save(); g.translate(W / 2, 262); g.rotate(-0.05); g.fillStyle = ok ? C.yellow : C.coral; g.textAlign = 'center'; g.fillText(ok ? 'clean!' : 'half rep', 0, 0); g.restore(); }
+  // bottom: depth bar with the target line
+  const bx = 60, bw = W - 120, by = 850, bh = 30;
+  g.fillStyle = 'rgba(18,16,31,.6)'; g.beginPath(); g.roundRect(bx, by, bw, bh, bh / 2); g.fill();
+  g.fillStyle = depth >= 0.75 ? C.yellow : '#fff'; g.beginPath(); g.roundRect(bx, by, Math.max(bh, bw * Math.min(1, depth)), bh, bh / 2); g.fill();
+  g.fillStyle = C.coral; g.fillRect(bx + bw * 0.75 - 4, by - 12, 8, bh + 24);
+  font(28, 'Nunito', 800); g.fillStyle = '#fff'; g.textAlign = 'left'; g.fillText('depth', bx, by - 22);
+  font(34); g.textAlign = 'right'; g.fillStyle = '#fff'; g.fillText('bodymark', W - 34, 60);
+  requestAnimationFrame(frame);
 }
-if (out.length) html += `<h3 class="sec">out now</h3><div class="list">` + out.slice().reverse().map(id => { const a = ALL[id], d = DROPS.find(x => x.id === id); return `<a class="row" href="app.html?a=${id}"><canvas class="pv" data-id="${d.demo}" width="200" height="150"></canvas><div><b>${a.title}</b><span>${d.pitch}</span></div></a>`; }).join('') + `</div>`;
-document.getElementById('drops').innerHTML = html;
-// moving previews, only the ones on screen, at 12.5 frames a second
-const pvs = [...document.querySelectorAll('canvas.pv')].map((cv, i) => ({ cv, g: cv.getContext('2d'), id: cv.dataset.id, on: false, off: i * 0.37 }));
-const io = new IntersectionObserver(es => es.forEach(e => { e.target._pv.on = e.isIntersecting; }), { rootMargin: '80px' });
-pvs.forEach(p => { p.cv._pv = p; io.observe(p.cv); });
-let lastF = -1;
-(function tick(now) { const f = Math.floor(now / 80); if (f !== lastF) { lastF = f; pvs.forEach(p => { if (p.on) drawDemo(p.id, p.g, f * 0.08 + p.off); }); } requestAnimationFrame(tick); })(0);
-document.querySelectorAll('a.row, a.bodyage').forEach(a => a.addEventListener('pointerdown', () => { try { sfx.tap(); } catch (e) {} }));
-// logo: the figure jumps between the two words, scaled to fit the canvas so nothing clips
+requestAnimationFrame(frame);
+
+// logo
 const lg = document.getElementById('logo').getContext('2d');
-await document.fonts.load("900 60px Archivo");
-function draw(now) {
+(function draw(now) {
   const t = now / 1000, p = (t % 1.6) / 1.6, j = p < 0.45 ? Math.sin(p / 0.45 * Math.PI) : 0;
   const LW = lg.canvas.width; lg.setTransform(1, 0, 0, 1, 0, 0); lg.clearRect(0, 0, LW, lg.canvas.height);
   lg.font = "900 96px 'Archivo', sans-serif"; if ('fontStretch' in lg) lg.fontStretch = 'condensed'; lg.fillStyle = '#fff'; lg.textBaseline = 'alphabetic';
-  const wb = lg.measureText('body').width, wm = lg.measureText('mark').width, gap = 70, tot = wb + gap + wm + 8, k = Math.min(1, LW / tot);
-  lg.setTransform(k, 0, 0, k, 4 * k, 150 * (1 - k)); lg.fillText('body', 0, 150); lg.fillText('mark', wb + gap, 150);
+  const wb = lg.measureText('body').width, wm = lg.measureText('mark').width, gap = 70, tot = wb + gap + wm + 8, kk = Math.min(1, LW / tot);
+  lg.setTransform(kk, 0, 0, kk, 4 * kk, 150 * (1 - kk)); lg.fillText('body', 0, 150); lg.fillText('mark', wb + gap, 150);
   mascot(lg, { x: wb + gap / 2, y: 102 - j * 16, s: 0.6, lw: 17, col: C.yellow, la: -2.15, ra: 2.15, ll: j ? -0.5 : -0.22, ll2: j ? 0.3 : -0.22, rl: j ? 0.5 : 0.22, rl2: j ? -0.3 : 0.22 });
   requestAnimationFrame(draw);
-}
-requestAnimationFrame(draw);
+})(0);
 </script>
 </body>
 </html>
