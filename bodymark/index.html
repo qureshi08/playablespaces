@@ -17,7 +17,7 @@
 <body class="home">
 <header class="hero">
   <div class="wrap">
-    <div class="brand"><canvas id="logo" width="460" height="120"></canvas></div>
+    <div class="brand"><canvas id="logo" width="460" height="170"></canvas></div>
     <h1>How does your body rank?</h1>
     <p>Quick camera tests that show where you rank against real people your age. Then dare a friend to beat you.</p>
     <p class="small">Free. No app, no sign up. Video never leaves your phone.</p>
@@ -44,23 +44,32 @@
 </main>
 <script type="module">
 import { ALL, TOP_BENCH } from './all.js';
-import { mascot, C } from './engine.js';
+import { mascot, C, sfx } from './engine.js';
+import { drawDemo } from './demos.js';
 const apps = Object.values(ALL);
 const beta = a => a.beta ? ' <span class="beta">beta</span>' : '';
-const row = a => `<a class="row ${a.group}" href="app.html?a=${a.id}"><b>${a.title}${beta(a)}</b><span>${a.hook}</span></a>`;
+const row = a => `<a class="row ${a.group}" href="app.html?a=${a.id}"><canvas class="pv" data-id="${a.id}" width="200" height="150"></canvas><div><b>${a.title}${beta(a)}</b><span>${a.hook}</span></div></a>`;
 const COLORS = ['v', 'v', 'y', 'v', 'c', 'v'];
-document.getElementById('bench').innerHTML = TOP_BENCH.map((id, i) => { const a = ALL[id]; return `<a class="tile t-${COLORS[i]}" href="app.html?a=${id}"><b>${a.title}</b><span>${a.hook}</span></a>`; }).join('');
+document.getElementById('bench').innerHTML = TOP_BENCH.map((id, i) => { const a = ALL[id]; return `<a class="tile t-${COLORS[i]}" href="app.html?a=${id}"><canvas class="pv" data-id="${id}" width="400" height="300"></canvas><b>${a.title}</b><span>${a.hook}</span></a>`; }).join('');
 document.getElementById('benchMore').innerHTML = apps.filter(a => a.group === 'bench' && !TOP_BENCH.includes(a.id)).map(row).join('');
 document.getElementById('hard').innerHTML = apps.filter(a => a.group === 'hard').map(row).join('');
 document.getElementById('play').innerHTML = apps.filter(a => a.group === 'play').map(row).join('');
+// moving previews: only the ones on screen are drawn, at the mascot's 12.5 frames a second
+const pvs = [...document.querySelectorAll('canvas.pv')].map((cv, i) => ({ cv, g: cv.getContext('2d'), id: cv.dataset.id, on: false, off: i * 0.37 }));
+const io = new IntersectionObserver(es => es.forEach(e => { e.target._pv.on = e.isIntersecting; }), { rootMargin: '80px' });
+pvs.forEach(p => { p.cv._pv = p; io.observe(p.cv); });
+let lastF = -1;
+(function tick(now) { const f = Math.floor(now / 80); if (f !== lastF) { lastF = f; pvs.forEach(p => { if (p.on) drawDemo(p.id, p.g, f * 0.08 + p.off); }); } requestAnimationFrame(tick); })(0);
+document.querySelectorAll('a.tile, a.row, a.bodyage').forEach(a => a.addEventListener('pointerdown', () => { try { sfx.tap(); } catch (e) {} }));
 // logo and the Body Age mascot, with the line boil
 const lg = document.getElementById('logo').getContext('2d'), bm = document.getElementById('bmascot').getContext('2d');
 await document.fonts.load("900 60px Archivo");
 function draw(now) {
   const t = now / 1000, p = (t % 1.6) / 1.6, j = p < 0.45 ? Math.sin(p / 0.45 * Math.PI) : 0;
-  lg.clearRect(0, 0, 460, 120); lg.font = "900 96px 'Archivo', sans-serif"; if ('fontStretch' in lg) lg.fontStretch = 'condensed'; lg.fillStyle = '#fff'; lg.textBaseline = 'alphabetic';
-  const wb = lg.measureText('body').width; lg.fillText('body', 0, 98); lg.fillText('mark', wb + 62, 98);
-  mascot(lg, { x: wb + 31, y: 62 - j * 14, s: 0.5, lw: 28, col: C.yellow, la: -2.6, ra: 2.6, ll: j ? -0.5 : -0.25, rl: j ? 0.5 : 0.25 });
+  // the figure jumps between the two words; the canvas is tall enough that its raised hands never touch the top edge
+  lg.clearRect(0, 0, 460, 170); lg.font = "900 96px 'Archivo', sans-serif"; if ('fontStretch' in lg) lg.fontStretch = 'condensed'; lg.fillStyle = '#fff'; lg.textBaseline = 'alphabetic';
+  const wb = lg.measureText('body').width; lg.fillText('body', 0, 150); lg.fillText('mark', wb + 70, 150);
+  mascot(lg, { x: wb + 35, y: 102 - j * 16, s: 0.6, lw: 17, col: C.yellow, la: -2.15, ra: 2.15, ll: j ? -0.5 : -0.22, ll2: j ? 0.3 : -0.22, rl: j ? 0.5 : 0.22, rl2: j ? -0.3 : 0.22 });
   bm.clearRect(0, 0, 240, 300); const sw = Math.sin(t * 1.7) * 0.06;
   mascot(bm, { x: 120, y: 190, s: 1.1, b: sw, col: C.ink, la: -1.5, ra: 1.5, ll: sw * 0.5, rl: 1.0, rl2: -0.5 });
   requestAnimationFrame(draw);

@@ -50,15 +50,105 @@ export function logResult(app, value, unit, better = 'high') {
 }
 let actx = null;
 export function audio() { actx = actx || new (window.AudioContext || window.webkitAudioContext)(); return actx; }
-export function beep(f = 880, d = 0.15, vol = 0.35, type = 'square') {
-  try { const a = audio(), o = a.createOscillator(), g = a.createGain(); o.type = type; o.frequency.value = f; g.gain.value = vol; o.connect(g); g.connect(a.destination); o.start(); o.stop(a.currentTime + d); } catch (e) {}
+/* ---------- sound effects: soft, rounded tones with quick envelopes (no harsh square beeps) ---------- */
+function tone(f, d = 0.12, vol = 0.25, type = 'sine', at = 0, slide = 0) {
+  try {
+    const a = audio(), t = a.currentTime + at, o = a.createOscillator(), g = a.createGain();
+    o.type = type; o.frequency.setValueAtTime(f, t); if (slide) o.frequency.exponentialRampToValueAtTime(f * slide, t + d);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + 0.008); g.gain.exponentialRampToValueAtTime(0.0001, t + d);
+    o.connect(g); g.connect(a.destination); o.start(t); o.stop(t + d + 0.02);
+  } catch (e) {}
 }
-export function say(text, rate = 1.05) {
-  try { const u = new SpeechSynthesisUtterance(text); u.rate = rate; u.lang = 'en-US'; speechSynthesis.cancel(); speechSynthesis.speak(u); } catch (e) {}
+function noise(d = 0.18, vol = 0.12, at = 0, hp = 1200) {
+  try {
+    const a = audio(), t = a.currentTime + at, n = a.createBufferSource(), b = a.createBuffer(1, Math.floor(a.sampleRate * d), a.sampleRate), ch = b.getChannelData(0);
+    for (let i = 0; i < ch.length; i++) ch[i] = (Math.random() * 2 - 1) * (1 - i / ch.length);
+    const f = a.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = hp; const g = a.createGain(); g.gain.value = vol;
+    n.buffer = b; n.connect(f); f.connect(g); g.connect(a.destination); n.start(t);
+  } catch (e) {}
+}
+export const sfx = {
+  tap() { tone(660, 0.06, 0.12, 'triangle'); },
+  start() { tone(523, 0.12, 0.2); tone(659, 0.12, 0.2, 'sine', 0.08); tone(784, 0.2, 0.22, 'sine', 0.16); },
+  rep() { tone(880, 0.09, 0.22, 'triangle'); tone(1320, 0.07, 0.1, 'sine', 0.03); },
+  good() { tone(784, 0.1, 0.2); tone(1175, 0.16, 0.2, 'sine', 0.07); },
+  bad() { tone(220, 0.22, 0.18, 'sawtooth', 0, 0.7); },
+  count() { tone(740, 0.1, 0.22, 'triangle'); },
+  go() { tone(988, 0.28, 0.3, 'triangle'); tone(1480, 0.2, 0.12, 'sine'); },
+  whoosh() { noise(0.25, 0.08, 0, 2500); },
+  result() { noise(0.2, 0.06, 0, 3000); [659, 784, 988].forEach((f, i) => tone(f, 0.18, 0.18, 'sine', 0.05 + i * 0.07)); },
+  best() { [523, 659, 784, 1047].forEach((f, i) => tone(f, i === 3 ? 0.4 : 0.14, 0.22, 'triangle', i * 0.09)); },
+};
+// old beep calls now play a soft blip in the same pitch range
+export function beep(f = 880, d = 0.15, vol = 0.35) { tone(f, Math.min(d, 0.25), Math.min(vol, 0.3) * 0.8, 'triangle'); }
+
+/* ---------- voice: recorded human clips (Gemini TTS), joined for numbers; browser voice only as a last resort ---------- */
+const VOICE_DIR = new URL('./voice/', import.meta.url).href;
+let clipNames = null; const clipBuf = {};
+const slugV = t => t.toLowerCase().replace(/'/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+async function loadVoice() {
+  try { clipNames = new Set(await (await fetch(VOICE_DIR + 'index.json')).json()); } catch (e) { clipNames = new Set(); }
+  for (const k of clipNames) clip(k); // warm the cache in the background
+}
+async function clip(k) {
+  if (clipBuf[k]) return clipBuf[k];
+  if (!clipNames || !clipNames.has(k)) return null;
+  clipBuf[k] = fetch(VOICE_DIR + k + '.mp3').then(r => r.arrayBuffer()).then(b => new Promise((res, rej) => audio().decodeAudioData(b, res, rej))).catch(() => null);
+  return clipBuf[k];
+}
+const TIERS = p => p >= 90 ? "top-ten-percent-thats-elite" : p >= 70 ? 'better-than-most-people' : p >= 45 ? 'above-average' : p >= 25 ? 'just-below-average' : 'room-to-grow';
+const UNITS = { centimetres: 'centimetres', centimetre: 'centimetres', seconds: 'seconds', second: 'seconds', metres: 'metres', 'kilometres per hour': 'kilometres-per-hour', percent: 'percent', 'steps a minute': 'steps-a-minute', walls: 'walls', dodged: 'dodged', 'years younger than you': 'years-younger-than-you', 'years older than you': 'years-older-than-you', "percent of bolt's speed": 'percent-of-bolts-speed' };
+function numClips(s) { // "42" -> n42, "2.48" -> n2 point n4 n8; null if any piece is not recorded (then one voice says the whole line)
+  const [i, d] = s.split('.'); const n = +i; if (n > 100 || isNaN(n)) return null;
+  const out = ['n' + n]; if (d) { out.push('point'); for (const c of d) out.push('n' + c); }
+  return out.every(k => clipNames.has(k)) ? out : null;
+}
+function toClips(text) {
+  const parts = [];
+  for (let seg of text.split(/(?<=[.!?])\s+/)) {
+    seg = seg.trim(); if (!seg) continue;
+    const key = slugV(seg), low = seg.toLowerCase().replace(/[.!?]+$/, '').trim();
+    if (clipNames.has(key)) { parts.push(key); continue; }
+    let m = /^better than (\d+)% of/.exec(low); if (m) { parts.push(TIERS(+m[1])); continue; }
+    m = /^(\d+(?:\.\d+)?)\s*(.*)$/.exec(low);
+    if (m) { const nc = numClips(m[1]); const u = m[2] ? (UNITS[m[2]] || slugV(m[2])) : null; if (nc && (!u || clipNames.has(u))) { parts.push(...nc); if (u) parts.push(u); continue; } }
+    m = /^(.*?)\s+(\d+(?:\.\d+)?)$/.exec(low);
+    if (m && clipNames.has(slugV(m[1])) && numClips(m[2])) { parts.push(slugV(m[1]), ...numClips(m[2])); continue; }
+    parts.push({ tts: seg });
+  }
+  return parts;
+}
+let voiceGen = 0;
+export async function say(text) {
+  if (/^\d+$/.test(text)) sfx.rep(); else if (/^no rep/i.test(text)) sfx.bad();
+  const gen = ++voiceGen; try { speechSynthesis.cancel(); } catch (e) {}
+  if (!clipNames) await loadVoice();
+  const a = audio(); let t = a.currentTime + 0.02;
+  for (const p of toClips(text)) {
+    if (gen !== voiceGen) return;
+    if (typeof p === 'string') {
+      const b = await clip(p); if (!b || gen !== voiceGen) continue;
+      const src = a.createBufferSource(); src.buffer = b; src.connect(a.destination); t = Math.max(t, a.currentTime); src.start(t); t += b.duration + 0.04;
+      say.cur = say.cur || []; say.cur.push(src);
+    } else {
+      await new Promise(r => setTimeout(r, Math.max(0, (t - a.currentTime) * 1000)));
+      if (gen !== voiceGen) return; fallbackSay(p.tts);
+    }
+  }
+}
+say.stop = () => { voiceGen++; (say.cur || []).forEach(s => { try { s.stop(); } catch (e) {} }); say.cur = []; };
+// last resort for any line without a recording: the most natural voice the device has
+let bestVoice;
+function fallbackSay(text) {
+  try {
+    if (!bestVoice) { const vs = speechSynthesis.getVoices().filter(v => /^en/i.test(v.lang)); bestVoice = vs.find(v => /natural|neural|premium|enhanced/i.test(v.name)) || vs.find(v => /samantha|daniel|google uk english male|google us english/i.test(v.name)) || vs[0]; }
+    const u = new SpeechSynthesisUtterance(text); if (bestVoice) u.voice = bestVoice; u.rate = 1; u.lang = 'en-US'; speechSynthesis.speak(u);
+  } catch (e) {}
 }
 function unlockAudio() {
-  try { const a = audio(); a.resume(); beep(440, 0.01, 0); } catch (e) {}
+  try { const a = audio(); a.resume(); tone(440, 0.01, 0.0002); } catch (e) {}
   try { speechSynthesis.speak(new SpeechSynthesisUtterance(' ')); } catch (e) {}
+  if (!clipNames) loadVoice();
 }
 
 /* ---------- drawing helpers (all sizes in units of U = short side / 100) ---------- */
@@ -146,6 +236,7 @@ export async function run(app) {
       logResult(app.id, v, unit, better);
       // keep the result and a snapshot of this moment for the share card
       E.result = { v, unit, better, rank, extra };
+      { const prev = store.get('moves:history', []).filter(x => x.a === app.id && x.u === unit).slice(0, -1).map(x => x.v); const isBest = prev.length && (better === 'low' ? v < Math.min(...prev) : v > Math.max(...prev)); (isBest ? sfx.best : sfx.result)(); }
       // snapshot a moment later, so the photo shows the score on screen
       setTimeout(() => { try { const s = document.createElement('canvas'), k = 540 / Math.max(cv.width, cv.height); s.width = Math.round(cv.width * k); s.height = Math.round(cv.height * k); s.getContext('2d').drawImage(cv, 0, 0, s.width, s.height); E.snap = s; } catch (e) {} }, 180);
       shareBtn.style.display = '';
@@ -175,7 +266,7 @@ export async function run(app) {
 
   /* bottom bar buttons */
   const bar = $('#bar');
-  const addBtn = (label, fn, cls = '') => { const b = document.createElement('button'); b.textContent = label; b.className = cls; b.onclick = fn; bar.appendChild(b); return b; };
+  const addBtn = (label, fn, cls = '') => { const b = document.createElement('button'); b.textContent = label; b.className = cls; b.onclick = e => { sfx.tap(); fn(e); }; bar.appendChild(b); return b; };
   addBtn('←', () => { location.href = './'; }, 'icon');
   if (!app.noCamera) addBtn('Flip', async () => {
     const cams = (await navigator.mediaDevices.enumerateDevices()).filter(d => d.kind === 'videoinput');
@@ -198,7 +289,7 @@ export async function run(app) {
 
   /* share card: a 9:16 image for Stories with the score, a photo of the moment and a challenge link */
   async function shareCard() {
-    const r = E.result; if (!r) return;
+    const r = E.result; if (!r) return; sfx.whoosh();
     const link = location.origin + location.pathname + '?a=' + app.id + '&beat=' + (Math.round(r.v * 100) / 100) + '&u=' + encodeURIComponent(r.unit || '');
     const W = 1080, H = 1920, c = document.createElement('canvas'); c.width = W; c.height = H; const x = c.getContext('2d'), F = { U: 10.8, W, H };
     const bg = app.group === 'hard' ? C.coral : app.group === 'play' ? C.ink : C.violet, acc = C.yellow;
@@ -327,7 +418,7 @@ export async function run(app) {
 
   /* start button */
   $('#startBtn').onclick = async () => {
-    unlockAudio();
+    unlockAudio(); sfx.start();
     const st = $('#startState');
     try {
       let models = {};

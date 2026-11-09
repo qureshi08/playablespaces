@@ -84,7 +84,7 @@ lever: {
     const dx = Math.abs(an.x - sh.x) || 1; st.deg = Math.atan2(an.y - sh.y, dx) * 180 / Math.PI; st.sh = sh; st.an = an; st.hip = hip;
     const hanging = wr.y < sh.y, flatish = dx > dist(sh, an) * 0.6;
     const done = holdTimer(st, E, hanging && flatish && Math.abs(st.deg) <= E.S.tol);
-    if (done > 0.8) { st.last = done; st.lastAt = E.t; st.best = Math.max(st.best, done); say(done.toFixed(1) + ' seconds'); E.log(done, 's'); }
+    if (done > 0.8) { st.last = done; st.lastAt = E.t; st.best = Math.max(st.best, done); say(Math.round(done) + ' seconds.'); E.log(done, 's'); }
   },
   draw(g, E) {
     const st = this.st, U = E.U, W = E.W, H = E.H;
@@ -122,7 +122,7 @@ handstand: {
     const st = this.st; if (d < 1.5 || !st.n) { st.sum = 0; st.n = 0; return; }
     const avg = st.sum / st.n, score = Math.round((4 + 4 * avg / 100 + 2 * Math.min(1, d / 30)) * 10) / 10;
     st.result = { score, avg, d, cards: [score - 0.1, score + 0.1, score].map(x => clamp(x, 0, 10).toFixed(1)) }; st.resAt = E.t;
-    st.sum = 0; st.n = 0; say('Score ' + score.toFixed(1)); E.log(score, '/10');
+    st.sum = 0; st.n = 0; say('Score. ' + score.toFixed(1)); E.log(score, '/10');
   },
   draw(g, E) {
     const st = this.st, U = E.U, W = E.W, H = E.H;
@@ -171,7 +171,7 @@ ghost: {
         const lastAll = store.get('moves:ghostlast', {}), last = lastAll[S.dist]; st.prev = last ? last.you : null;
         lastAll[S.dist] = { you: st.you, at: Date.now() }; store.set('moves:ghostlast', lastAll);
         st.rank = 'I ran ' + st.pct + '% of Bolt\'s speed';
-        say('You ' + st.you.toFixed(2) + '. Bolt ' + bt.toFixed(2) + '. ' + st.pct + ' percent of Bolt\'s speed');
+        say(st.pct + ' percent of Bolt\'s speed.');
         E.log(st.you, 's', 'low', st.rank);
       }
       if (el > 15) { st.phase = 'idle'; E.toast('No finish seen. Press Race again'); }

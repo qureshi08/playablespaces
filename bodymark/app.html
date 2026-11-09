@@ -20,6 +20,7 @@
     <p id="hook" class="hook"></p>
   </div></div>
   <div class="body">
+    <canvas id="preview" width="800" height="600"></canvas>
     <ol id="steps"></ol>
     <div id="settings"></div>
     <button id="startBtn" class="go">Start</button>
@@ -36,6 +37,11 @@ const id = new URLSearchParams(location.search).get('a') || 'bodyage';
 const app = ALL[id];
 if (!app) location.href = './';
 await Promise.all(["900 20px Archivo", "800 20px Nunito", "800 20px 'Shantell Sans'"].map(f => document.fonts.load(f).catch(() => {})));
+// moving preview of the test on its start screen, until the camera starts
+import('./demos.js').then(({ drawDemo }) => {
+  const pv = document.getElementById('preview').getContext('2d'); let last = -1;
+  (function tick(now) { if (document.getElementById('intro').classList.contains('off')) return; const f = Math.floor(now / 80); if (f !== last) { last = f; drawDemo(id, pv, f * 0.08); } requestAnimationFrame(tick); })(0);
+});
 run(app);
 </script>
 </body>

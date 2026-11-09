@@ -74,7 +74,7 @@ function hold(o) {
     done(E, d) {
       const st = this.st; if (d < (o.min ?? 1)) return; st.last = d; st.lastAt = E.t; st.best = Math.max(st.best, d);
       st.rank = o.rank ? rankLine(o.rank(E, d)) : null;
-      say((o.stopWord ? o.stopWord + '. ' : '') + d.toFixed(1) + ' seconds' + (st.rank ? '. ' + st.rank : ''));
+      say((o.stopWord ? o.stopWord + '. ' : '') + Math.round(d) + ' seconds.' + (st.rank ? ' ' + st.rank : ''));
       E.log(d, 's', 'high', st.rank);
     },
     draw(g, E) {
@@ -104,7 +104,7 @@ function lines(o) {
     },
     finish(E, time, extra) {
       const st = this.st; st.res = time; st.phase = 'done'; st.resAt = E.t; st.extra = extra;
-      if (st.best == null || time < st.best) st.best = time; say(time.toFixed(2) + ' seconds'); E.log(time, 's', 'low');
+      if (st.best == null || time < st.best) st.best = time; say(time.toFixed(2) + ' seconds.'); E.log(time, 's', 'low');
     },
     draw(g, E) {
       const st = this.st, U = E.U, H = E.H;
@@ -138,8 +138,8 @@ falsestart: {
       if (!st.ref) st.ref = pts.map(p => ({ x: p.x, y: p.y }));
       const move = Math.max(...pts.map((p, i) => dist(p, st.ref[i]))) / size;
       if (move > 0.035) {
-        if (st.phase === 'armed') { st.phase = 'done'; st.res = -1; clearTimeout(this.timer); say('False start. You moved before the beep'); }
-        else { const r = E.now() - st.tb - 0.033; st.res = r; st.phase = 'done'; if (r < 0.1) say('False start. ' + r.toFixed(3)); else say(r.toFixed(3) + ' seconds'); if (r >= 0.1 && (st.best == null || r < st.best)) st.best = r; E.log(r, 's', 'low'); }
+        if (st.phase === 'armed') { st.phase = 'done'; st.res = -1; clearTimeout(this.timer); say('False start. You moved before the beep.'); }
+        else { const r = E.now() - st.tb - 0.033; st.res = r; st.phase = 'done'; if (r < 0.1) say('False start.'); else say(r < 0.15 ? 'Lightning fast!' : r < 0.2 ? 'Fast reaction.' : r < 0.3 ? 'Good reaction.' : 'Bit slow that time.'); if (r >= 0.1 && (st.best == null || r < st.best)) st.best = r; E.log(r, 's', 'low'); }
       }
     }
   },
@@ -172,7 +172,7 @@ broadjump: {
     if (st.wait && E.t >= st.wait) {
       st.wait = 0; const A = S.gates[0] * E.W, B = S.gates[1] * E.W, dir = Math.sign(B - A);
       const heels = [P[29] || P[27], P[30] || P[28]].map(p => (p.x - A) * dir), back = Math.min(...heels) * dir + A;
-      const m = (back - A) / (B - A) * S.dist; st.res = m; st.heelX = back; if (m > 0.3) { if (!st.best || m > st.best) st.best = m; say(m.toFixed(2) + ' metres'); E.log(m, 'm'); }
+      const m = (back - A) / (B - A) * S.dist; st.res = m; st.heelX = back; if (m > 0.3) { if (!st.best || m > st.best) st.best = m; say(m.toFixed(2) + ' metres.'); E.log(m, 'm'); }
     }
   },
   draw(g, E) {
@@ -197,7 +197,7 @@ barpath: {
     if (vy < -30 && st.dir === 1) { st.dir = -1; st.up0 = st.low; }
     if (st.dir === -1 && vy > -10 && st.up0) {
       const d = st.up0.y - w.y, dt = E.t - st.up0.t, size = E.P && seen(E.P, [11, 23], 0.3) ? dist(E.P[11], E.P[23]) : E.H * 0.2;
-      if (d > size * 0.3 && dt > 0.2) { const v = d / dt; st.reps++; if (st.reps === 1) st.v1 = v; st.v = v / st.v1 * 100; say(st.reps === 1 ? 'Rep 1' : Math.round(st.v) + ' percent'); E.log(st.v, '%'); }
+      if (d > size * 0.3 && dt > 0.2) { const v = d / dt; st.reps++; if (st.reps === 1) st.v1 = v; st.v = v / st.v1 * 100; say(st.reps === 1 ? 'Rep one.' : Math.round(st.v) + ' percent.'); E.log(st.v, '%'); }
       st.dir = 0; st.up0 = null;
     }
   },
@@ -245,7 +245,7 @@ runform: {
       const b = ppm ? st.bounce.reduce((s, x) => s + x, 0) / st.bounce.length / ppm * 100 * 2 : null, kn = st.knee.reduce((s, x) => s + x, 0) / st.knee.length;
       const sc = (cad >= 165 && cad <= 190 ? 40 : Math.max(0, 40 - Math.abs(cad < 165 ? 165 - cad : cad - 190) * 2)) + (b == null ? 15 : b <= 9 ? 30 : Math.max(0, 30 - (b - 9) * 5)) + (kn >= 135 && kn <= 165 ? 30 : Math.max(0, 30 - Math.abs(kn < 135 ? 135 - kn : kn - 165)));
       st.cad = cad; st.b = b; st.kn = kn; st.score = Math.round(sc);
-      if (!st.said || t - st.said > 8) { st.said = t; say(Math.round(cad) + ' steps a minute'); E.log(cad, 'spm'); }
+      if (!st.said || t - st.said > 8) { st.said = t; say(Math.round(cad) + ' steps a minute.'); E.log(cad, 'spm'); }
     }
   },
   draw(g, E) {
@@ -267,7 +267,7 @@ kneecheck: {
       const y = hipY(P); if (y > st.track.low) { st.track.low = y; st.track.snap = P.map(p => ({ ...p })); }
       if (E.t > st.track.until) {
         const Q = st.track.snap, ratio = Math.abs(Q[25].x - Q[26].x) / (Math.abs(Q[27].x - Q[28].x) || 1);
-        st.res = ratio; st.snap = Q; st.track = null; say(ratio < 0.8 ? 'Knees came in. Ratio ' + ratio.toFixed(2) : 'Knees tracked well'); E.log(ratio, 'ratio');
+        st.res = ratio; st.snap = Q; st.track = null; say(ratio < 0.8 ? 'Knees came in.' : 'Knees tracked well.'); E.log(ratio, 'ratio');
       }
     }
   },
@@ -313,7 +313,7 @@ shotspeed: {
     const st = this.st, S = E.S, b = E.ball; if (!S.gates || S.gates.length < 2 || !b) return;
     if (b.t !== E.t) return; const gA = S.gates[0] * E.W, gB = S.gates[1] * E.W, t = E.t;
     if (st.t0 == null) { for (const [g1, g2] of [[gA, gB], [gB, gA]]) { const c = crossT(st.px, b.x, g1, st.pt, t); if (c != null) { st.t0 = c; st.target = g2; } } }
-    else { const c = crossT(st.px, b.x, st.target, st.pt, t); if (c != null) { const dt = c - st.t0; if (dt > 0.02) { const k = S.dist / dt * 3.6; st.res = k; if (!st.best || k > st.best) st.best = k; say(Math.round(k) + ' kilometres per hour'); E.log(k, 'km/h'); } st.t0 = null; } else if (t - st.t0 > 1.5) st.t0 = null; }
+    else { const c = crossT(st.px, b.x, st.target, st.pt, t); if (c != null) { const dt = c - st.t0; if (dt > 0.02) { const k = S.dist / dt * 3.6; st.res = k; if (!st.best || k > st.best) st.best = k; say(Math.round(k) + ' kilometres per hour.'); E.log(k, 'km/h'); } st.t0 = null; } else if (t - st.t0 > 1.5) st.t0 = null; }
     st.px = b.x; st.pt = t;
   },
   draw(g, E) { const st = this.st; if (st.res != null) scoreCard(g, E, 'Shot speed', Math.round(st.res) + ' km/h', 'best ' + Math.round(st.best) + ' km/h'); else if (!E.ball) E.msg = E.msg || 'Put the ball in the picture'; },
@@ -331,7 +331,7 @@ keepyups: {
       if (P && b.y > footY(P) + b.r * 0.2 && st.n) this.drop(E);
     } else if (st.n && E.t - st.lastSeen > 1.2) this.drop(E);
   },
-  drop(E) { const st = this.st; say('Dropped. ' + st.n); E.log(st.n, 'touches'); st.best = Math.max(st.best, st.n); st.lastRun = st.n; st.n = 0; st.dropAt = E.t; },
+  drop(E) { const st = this.st; say('Dropped! ' + st.n + '.'); E.log(st.n, 'touches'); st.best = Math.max(st.best, st.n); st.lastRun = st.n; st.n = 0; st.dropAt = E.t; },
   draw(g, E) { const st = this.st; scoreCard(g, E, 'Touches', String(st.n), 'best ' + st.best); if (st.dropAt && E.t - st.dropAt < 2) bigNote(g, E, 'Dropped at ' + st.lastRun, C.mad); },
 },
 
@@ -378,7 +378,7 @@ sixcorner: {
     const wantX = c.includes('L') ? -1 : 1, wantZ = c[0] === 'F' ? 1 : c[0] === 'B' ? -1 : 0;
     const hit = dx * wantX > 0.6 && (wantZ === 0 || (wantZ > 0 ? ds > 1.12 : ds < 0.9));
     if (!st.out && hit) { st.out = true; beep(1300, 0.04); }
-    if (st.out && Math.abs(dx) < 0.3 && Math.abs(ds - 1) < 0.08) { st.out = false; st.i++; if (st.i >= 6) { const r = E.now() - st.t0; st.res = r; st.phase = 'done'; if (!st.best || r < st.best) st.best = r; say(r.toFixed(1) + ' seconds'); E.log(r, 's', 'low'); } else this.cue(E); }
+    if (st.out && Math.abs(dx) < 0.3 && Math.abs(ds - 1) < 0.08) { st.out = false; st.i++; if (st.i >= 6) { const r = E.now() - st.t0; st.res = r; st.phase = 'done'; if (!st.best || r < st.best) st.best = r; say(r.toFixed(1) + ' seconds.'); E.log(r, 's', 'low'); } else this.cue(E); }
   },
   draw(g, E) {
     const st = this.st, W = E.W, H = E.H, U = E.U;
@@ -472,7 +472,7 @@ reaction: screenGame({
   tap(E) {
     const s = this.st;
     if (s.st === 'wait') { clearTimeout(this.timer); s.st = 'early'; return; }
-    if (s.st === 'go') { if (!s.t0) return; s.res = performance.now() / 1000 - s.t0; s.st = 'done'; if (!s.best || s.res < s.best) s.best = s.res; s.rank = rankLine(reactionRank(s.res)); E.log(s.res, 's', 'low', s.rank); say(s.res.toFixed(3) + '. ' + s.rank); return; }
+    if (s.st === 'go') { if (!s.t0) return; s.res = performance.now() / 1000 - s.t0; s.st = 'done'; if (!s.best || s.res < s.best) s.best = s.res; s.rank = rankLine(reactionRank(s.res)); E.log(s.res, 's', 'low', s.rank); say((s.res < 0.2 ? 'Lightning fast!' : s.res < 0.25 ? 'Fast reaction.' : s.res < 0.32 ? 'Good reaction.' : 'Bit slow that time.') + ' ' + s.rank); return; }
     s.st = 'wait'; s.t0 = null; this.timer = setTimeout(() => { s.st = 'go'; }, rnd(1500, 4000));
   },
   draw(g, E) {
@@ -502,7 +502,7 @@ simon: {
     const st = this.st; if (st.phase === 'show') { const k = Math.floor((E.now() - st.showAt) / 1.1); if (k >= st.seq.length) { st.phase = 'copy'; st.i = 0; st.since = E.now(); say('Go'); } else if (k !== st.shown) { st.shown = k; say(this.POSES[st.seq[k]][0], 1.2); } return; }
     if (st.phase !== 'copy') return; const p = this.pose(E.Sm), want = st.seq[st.i];
     if (p === want) { if (!st.hold) st.hold = E.now(); if (E.now() - st.hold > 0.35) { beep(1300, 0.05); st.i++; st.hold = 0; st.since = E.now(); if (st.i >= st.seq.length) { setTimeout(() => this.next(E), 700); st.phase = 'wait'; } } }
-    else { st.hold = 0; if (E.now() - st.since > 4) { st.phase = 'out'; say('Out. Level ' + (st.level - 1)); E.log(st.level - 1, 'level'); } }
+    else { st.hold = 0; if (E.now() - st.since > 4) { st.phase = 'out'; say('Out! Level ' + (st.level - 1)); E.log(st.level - 1, 'level'); } }
   },
   draw(g, E) {
     const st = this.st, U = E.U, W = E.W;
@@ -524,7 +524,7 @@ holewall: {
     const st = this.st; if (st.phase !== 'run') return; const P = E.Sm, el = E.now() - st.w0, T = Math.max(2.2, 4 - st.round * 0.15);
     if (el >= T) {
       let ok = 0; if (seen(P, [11, 12, 15, 16, 23, 24, 27, 28], 0.35)) { const leftIsScreenLeft = P[11].x < P[12].x; const [lsA, lsB, rsA, rsB] = leftIsScreenLeft ? [11, 15, 12, 16] : [12, 16, 11, 15]; const [lhA, lhB, rhA, rhB] = leftIsScreenLeft ? [23, 27, 24, 28] : [24, 28, 23, 27]; const errs = [[this.limb(P, lsA, lsB), st.shape.l], [this.limb(P, rsA, rsB), st.shape.r], [this.limb(P, lhA, lhB), st.shape.ll], [this.limb(P, rhA, rhB), st.shape.rl]].map(([a, b]) => Math.abs(Math.atan2(Math.sin(a - b), Math.cos(a - b)))); ok = clamp(100 - errs.reduce((s, x) => s + x, 0) / 4 * 120, 0, 100); }
-      st.last = ok; if (ok >= 60) { st.score++; beep(1400, 0.08); say('Fit'); this.newWall(E); } else { st.phase = 'out'; say('Crash! ' + st.score + ' walls'); E.log(st.score, 'walls'); }
+      st.last = ok; if (ok >= 60) { st.score++; beep(1400, 0.08); say('Fit!'); this.newWall(E); } else { st.phase = 'out'; say('Crash! ' + st.score + ' walls.'); E.log(st.score, 'walls'); }
     }
   },
   draw(g, E) {
@@ -549,7 +549,7 @@ dodge: {
     const st = this.st; if (st.phase !== 'run') return; const now = E.now(), W = E.W, H = E.H, P = E.Sm;
     if (now >= st.next) { st.balls.push({ x: rnd(W * 0.08, W * 0.92), y: -E.U * 5, v: H * rnd(0.35, 0.55) * (1 + st.score * 0.02), r: E.U * rnd(4, 6), t: now }); st.next = now + Math.max(0.35, 1.1 - st.score * 0.02); }
     st.balls.forEach(b => { b.y += b.v * (now - b.t); b.t = now; });
-    if (P) st.balls.forEach(b => { if (!b.hit && [0, 11, 12, 13, 14, 15, 16, 23, 24, 25, 26].some(i => P[i].v > 0.4 && dist(P[i], b) < b.r + E.U * 2)) { b.hit = true; st.hits++; beep(220, 0.15); if (st.hits >= 3) { st.phase = 'out'; say('Out. ' + st.score + ' dodged'); E.log(st.score, 'dodged'); } } });
+    if (P) st.balls.forEach(b => { if (!b.hit && [0, 11, 12, 13, 14, 15, 16, 23, 24, 25, 26].some(i => P[i].v > 0.4 && dist(P[i], b) < b.r + E.U * 2)) { b.hit = true; st.hits++; beep(220, 0.15); if (st.hits >= 3) { st.phase = 'out'; say('Out! ' + st.score + ' dodged.'); E.log(st.score, 'dodged'); } } });
     st.balls = st.balls.filter(b => { if (b.y > H + b.r) { if (!b.hit) st.score++; return false; } return !b.hit; });
   },
   draw(g, E) { const st = this.st; st.balls.forEach(b => { g.beginPath(); g.arc(b.x, b.y, b.r, 0, 7); g.fillStyle = C.mad; g.fill(); g.lineWidth = E.U * 0.5; g.strokeStyle = C.paper; g.stroke(); }); if (st.phase === 'idle') bigNote(g, E, 'Press Go'); scoreCard(g, E, 'Dodged', String(st.score), 'hits ' + st.hits + ' of 3' + (st.phase === 'out' ? ', out!' : ''), E.U * 5, E.H * 0.05); },
@@ -558,9 +558,9 @@ dodge: {
 nolaugh: {
   cat: 'Challenges', id: 'nolaugh', title: 'Try not to laugh', hook: 'The AI catches your first smile.', cam: 'user', face: true, pose: false, skeleton: false,
   setup: ['Front camera, face the phone, good light.', 'Play a funny clip on another screen (or have a friend try to make you laugh). Press Go and keep a straight face. The timer stops at your first smile.'],
-  buttons: [{ label: 'Go', fn(E) { Object.assign(this.st, { phase: 'run', t0: E.now() }); say('Go. Straight face.'); } }],
+  buttons: [{ label: 'Go', fn(E) { Object.assign(this.st, { phase: 'run', t0: E.now() }); say('Go! Straight face.'); } }],
   reset(E) { this.st = { phase: 'idle', best: 0, sm: 0 }; },
-  frame(E) { const st = this.st; if (!E.F) { E.msg = 'Show your face'; return; } st.sm = ((E.B.mouthSmileLeft || 0) + (E.B.mouthSmileRight || 0)) / 2; if (st.phase === 'run' && st.sm > 0.45) { st.res = E.now() - st.t0; st.phase = 'done'; st.best = Math.max(st.best, st.res); say('You smiled! ' + st.res.toFixed(1) + ' seconds'); E.log(st.res, 's'); } },
+  frame(E) { const st = this.st; if (!E.F) { E.msg = 'Show your face'; return; } st.sm = ((E.B.mouthSmileLeft || 0) + (E.B.mouthSmileRight || 0)) / 2; if (st.phase === 'run' && st.sm > 0.45) { st.res = E.now() - st.t0; st.phase = 'done'; st.best = Math.max(st.best, st.res); say('You smiled! ' + Math.round(st.res) + ' seconds.'); E.log(st.res, 's'); } },
   draw(g, E) { const st = this.st; meter(g, E, st.sm, 0.45, E.W - E.U * 12, E.H * 0.3, E.H * 0.3, 'smile'); if (st.phase === 'run') scoreCard(g, E, 'Straight face', mmss(E.now() - st.t0), ''); if (st.phase === 'done') scoreCard(g, E, 'Smiled at', mmss(st.res), 'best ' + st.best.toFixed(1) + ' s', E.U * 5, E.H * 0.6, C.mad); if (st.phase === 'idle') bigNote(g, E, 'Press Go. Do not smile.'); },
 },
 
@@ -569,12 +569,12 @@ jacksrace: {
   cat: 'Family', id: 'jacksrace', title: 'Jumping jack race', hook: 'Dad vs son. 30 seconds of jumping jacks.', people: 2, model: 'full',
   settings: [{ k: 'secs', label: 'Race length (seconds)', def: 30 }],
   setup: ['Phone on a tripod 3 to 4 m away. Two people side by side, both whole bodies in the picture.', 'Press Go. The app counts full jumping jacks for each person (hands above head, feet apart) and calls the winner.'],
-  buttons: [{ label: 'Go', fn(E) { const st = this.st; say('3, 2, 1, go'); Object.assign(st, { phase: 'count', t0: E.now() + 2.5, n: [0, 0], open: [false, false] }); } }],
+  buttons: [{ label: 'Go', fn(E) { const st = this.st; say('Three, two, one, go!'); Object.assign(st, { phase: 'count', t0: E.now() + 2.5, n: [0, 0], open: [false, false] }); } }],
   reset(E) { this.st = { phase: 'idle', n: [0, 0], open: [false, false] }; },
   frame(E) {
     const st = this.st, now = E.now(); if (st.phase !== 'count' || now < st.t0) return;
     E.Ps.slice(0, 2).forEach((P, i) => { if (!seen(P, [0, 15, 16, 27, 28, 23, 24], 0.35)) return; const open = P[15].y < P[0].y && P[16].y < P[0].y && Math.abs(P[27].x - P[28].x) > dist(P[23], P[24]) * 1.6, closed = P[15].y > P[11].y && P[16].y > P[12].y; if (open && !st.open[i]) { st.open[i] = true; } if (closed && st.open[i]) { st.open[i] = false; st.n[i]++; beep(i ? 1100 : 800, 0.03); } });
-    if (now - st.t0 >= E.S.secs) { st.phase = 'done'; const [a, b] = st.n; say(a === b ? 'Draw! ' + a + ' each' : (a > b ? 'Left' : 'Right') + ' wins, ' + Math.max(a, b) + ' to ' + Math.min(a, b)); E.log(Math.max(a, b), 'jacks'); }
+    if (now - st.t0 >= E.S.secs) { st.phase = 'done'; const [a, b] = st.n; say(a === b ? 'Draw!' : (a > b ? 'Left wins!' : 'Right wins!')); E.log(Math.max(a, b), 'jacks'); }
   },
   draw(g, E) {
     const st = this.st, W = E.W, H = E.H, U = E.U;
@@ -601,7 +601,7 @@ freezedance: {
     if (st.phase === 'freeze') {
       const Ps = E.Ps; if (now - st.fz > 0.6 && !st.ref) st.ref = Ps.map(P => P.map(p => ({ ...p })));
       if (st.ref) Ps.forEach((P, i) => { const R = st.ref[i]; if (!R || !seen(P, [0, 11, 12], 0.4)) return; const s = bodyH(P) || 1, m = [0, 11, 12, 15, 16, 25, 26].reduce((a, k) => a + dist(P[k], R[k]), 0) / 7 / s; if (m > 0.04 && !st.moved.includes(i)) { st.moved.push(i); beep(200, 0.2); } });
-      if (now - st.fz > 2.6) { if (st.moved.length) say(st.moved.length === 1 ? 'Someone moved!' : st.moved.length + ' people moved!'); st.phase = 'music'; st.until = now + rnd(4, 9); setTimeout(() => this.play(E), 1500); st.showMoved = st.moved.slice(); st.showAt = now; }
+      if (now - st.fz > 2.6) { if (st.moved.length) say(st.moved.length === 1 ? 'Someone moved!' : 'A few people moved!'); st.phase = 'music'; st.until = now + rnd(4, 9); setTimeout(() => this.play(E), 1500); st.showMoved = st.moved.slice(); st.showAt = now; }
     }
   },
   draw(g, E) {

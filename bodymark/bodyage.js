@@ -31,9 +31,9 @@ export const BODYAGE = {
   start(E) { this.begin(E, 1); },
   begin(E, n) {
     const st = this.st; st.step = n; st.stepAt = E.now(); this.stepSt = {};
-    if (n === 1) say('Step 1. Stand on one leg and close your eyes.');
-    if (n === 2) say('Step 2. Jump as high as you can, twice.');
-    if (n === 3) say('Step 3. Sit down on the floor, then stand back up. Try not to use your hands.');
+    if (n === 1) say('Step one. Stand on one leg and close your eyes.');
+    if (n === 2) say('Step two. Jump as high as you can, twice.');
+    if (n === 3) say('Step three. Sit down on the floor, then stand back up. Try not to use your hands.');
     if (n === 4) this.finish(E);
   },
   // a skipped test is left out of the body age, never counted as zero
@@ -50,8 +50,8 @@ export const BODYAGE = {
     const leg = legLen(P), fy = footY(P);
     if (st.step === 1) {
       const up = Math.abs(P[27].y - P[28].y) > leg * 0.12;
-      if (up) { if (s.hs == null) { s.hs = E.t; beep(1100, 0.07); } s.last = E.t; s.cur = E.t - s.hs; if (s.cur >= 30) { st.bal = 30; beep(1400, 0.1); say('30 seconds. Top score.'); this.begin(E, 2); } }
-      else if (s.hs != null && E.t - s.last > 0.25) { st.bal = s.last - s.hs; say('Foot down. ' + st.bal.toFixed(1) + ' seconds.'); setTimeout(() => this.begin(E, 2), 1500); s.hs = null; st.step = 1.5; }
+      if (up) { if (s.hs == null) { s.hs = E.t; beep(1100, 0.07); } s.last = E.t; s.cur = E.t - s.hs; if (s.cur >= 30) { st.bal = 30; beep(1400, 0.1); say('Top score!'); this.begin(E, 2); } }
+      else if (s.hs != null && E.t - s.last > 0.25) { st.bal = s.last - s.hs; say('Foot down. ' + Math.round(st.bal) + ' seconds.'); setTimeout(() => this.begin(E, 2), 1500); s.hs = null; st.step = 1.5; }
     }
     if (st.step === 2) {
       // jump from time in the air
@@ -74,7 +74,7 @@ export const BODYAGE = {
       if (handDown && !s.hd && E.t - (s.hdAt || 0) > 0.5) { s.hands++; s.hdAt = E.t; beep(300, 0.08); }
       if (kneeDown && !s.kd && E.t - (s.kdAt || 0) > 0.5) { s.knees++; s.kdAt = E.t; beep(300, 0.08); }
       s.hd = handDown; s.kd = kneeDown;
-      if (s.phase === 'down' && h < leg * 0.35) { s.phase = 'up'; beep(1000, 0.06); say('Now stand up'); }
+      if (s.phase === 'down' && h < leg * 0.35) { s.phase = 'up'; beep(1000, 0.06); say('Now stand up.'); }
       if (s.phase === 'up' && h > leg * 0.85 && s.top > 0) { st.srt = this.srtScore(); st.step = 3.5; say('Done.'); setTimeout(() => this.begin(E, 4), 1200); }
     }
   },
@@ -82,7 +82,7 @@ export const BODYAGE = {
   finish(E) {
     const st = this.st, age = E.S.age, sex = E.S.sex, female = sex === 'Female';
     const bal = st.bal, jump = st.jumps.length ? Math.max(...st.jumps) : null;
-    if (bal == null && jump == null) { st.res = { none: true }; say('Do the balance or the jump test to get a body age. Press Next step to start again.'); return; }
+    if (bal == null && jump == null) { st.res = { none: true }; say('Do the balance or the jump test first.'); return; }
     const parts = [];
     if (bal != null) parts.push([lookup(BAL_AGE, bal), female ? 0.75 : 0.5]);
     if (jump != null) parts.push([jumpAge(jump, sex), female ? 0.25 : 0.5]);
