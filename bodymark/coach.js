@@ -21,7 +21,6 @@ export const PUSHUPS = {
     'Go all the way down for every rep. Half reps get called out. Stand up when you are done.',
   ],
   reset(E) { this.st = { state: 'setup', n: 0, no: 0, phase: 'top', d: 0, deep: false, seen0: 0, lastMove: 0, best: null, cue: '', cueAt: 0 }; },
-  barVisible(E) { return this.st.state === 'done'; },
   // depth of the current rep from the elbow angle (side or diagonal view): 0 = arms straight, 1 = elbows at 90 degrees
   read(E) {
     const P = E.Sm; if (!P) return { ok: false, why: 'far' };
@@ -67,11 +66,20 @@ export const PUSHUPS = {
   draw(g, E) {
     const st = this.st, U = E.U, W = E.W, H = E.H, now = E.now(), hookOn = now < E.hookUntil;
     if (st.state === 'setup') {
-      // a dashed plank outline shows where to be; the cue word is the only text
-      g.save(); g.setLineDash([U * 2.4, U * 1.8]); g.strokeStyle = 'rgba(255,255,255,.75)'; g.lineWidth = U * 0.9; g.lineCap = 'round';
-      const y = H * 0.72; g.beginPath(); g.moveTo(W * 0.18, y); g.lineTo(W * 0.78, y - H * 0.06); g.stroke();
-      g.beginPath(); g.arc(W * 0.82, y - H * 0.075, U * 3.2, 0, 7); g.stroke(); g.beginPath(); g.moveTo(W * 0.74, y - H * 0.055); g.lineTo(W * 0.74, y + H * 0.02); g.stroke(); g.restore();
+      // TOP zone: one big cue word. BOTTOM zone: a card with the three setup steps, the current one highlighted,
+      // and a ring that fills while the coach holds your plank before the countdown.
       if (!hookOn) pill(g, E, st.cue, H * 0.16, 11);
+      const steps = ['phone on the ground, 2 steps away', 'side on, whole body in view', 'get in a plank and hold'];
+      const cur = st.cue === 'step back' || st.cue === 'feet in view' ? (st.cue === 'step back' ? 0 : 1) : 2;
+      const cx = W * 0.07, cw = W * 0.86, ch = U * 25, cy = H - ch - U * 6;
+      g.save(); g.fillStyle = 'rgba(18,16,31,.78)'; g.beginPath(); g.roundRect(cx, cy, cw, ch, U * 4); g.fill(); g.restore();
+      steps.forEach((s, i) => {
+        const y = cy + U * 5 + i * U * 7.2, done = i < cur, on = i === cur;
+        g.beginPath(); g.arc(cx + U * 6, y, U * 2.4, 0, 7); g.fillStyle = done ? C.yellow : on ? '#fff' : 'rgba(255,255,255,.25)'; g.fill();
+        text(g, E, done ? '✓' : String(i + 1), cx + U * 6, y + U * 0.1, 2.8, done || on ? C.ink : '#fff', 900);
+        text(g, E, s, cx + U * 11, y, 3.6, on ? '#fff' : 'rgba(255,255,255,.6)', on ? 900 : 700, 'left');
+      });
+      if (st.seen0) { const p = clamp((now - st.seen0) / 1, 0, 1); g.save(); g.strokeStyle = C.yellow; g.lineWidth = U * 1.4; g.lineCap = 'round'; g.beginPath(); g.arc(W / 2, H * 0.3, U * 7, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * p); g.stroke(); g.restore(); }
       return;
     }
     if (st.state === 'count') { const k = Math.min(3, Math.floor((now - st.c0) / 0.75)); pill(g, E, ['3', '2', '1', 'go!'][k], H * 0.2, 26, C.yellow); return; }

@@ -307,7 +307,7 @@ export async function run(app) {
         else if (p != null) comment(p >= 70 ? 'resultHigh' : p >= 40 ? 'resultMid' : 'resultLow', { chance: 0.85, gap: 0 }); }
       // snapshot a moment later, so the photo shows the score on screen
       setTimeout(() => { try { const s = document.createElement('canvas'), k = 540 / Math.max(cv.width, cv.height); s.width = Math.round(cv.width * k); s.height = Math.round(cv.height * k); s.getContext('2d').drawImage(cv, 0, 0, s.width, s.height); E.snap = s; } catch (e) {} }, 180);
-      shareBtn.style.display = '';
+      if (!app.immersive) shareBtn.style.display = '';
       if (E.beat != null) { const won = better === 'low' ? v < E.beat : v > E.beat; if (won && !E.beatWon) { E.beatWon = true; sfx.cheer(); comment('challengeWon', { gap: 0 }); } }
     },
     toast(s, ms = 1800) { const el = $('#toast'); el.textContent = s; el.classList.add('on'); clearTimeout(el._t); el._t = setTimeout(() => el.classList.remove('on'), ms); },
@@ -346,9 +346,15 @@ export async function run(app) {
   if (app.gates) addBtn('Set lines', () => { E.gateMode = 'lines'; S.gates = []; E.toast('Tap on the ' + app.gateNames[0]); }, '');
   if (app.points) addBtn('Set spot', () => { E.gateMode = 'pts'; S.pts = []; E.toast('Tap on the ' + app.pointNames[0]); }, '');
   (app.buttons || (app.action ? [app.action] : [])).forEach(b => addBtn(b.label, () => b.fn.call(app, E), 'go'));
-  addBtn('Reset', () => { app.reset && app.reset(E); E.toast('Reset'); }, '');
+  const resetBtn = addBtn('Reset', () => { app.reset && app.reset(E); E.toast('Reset'); }, '');
   const recBtn = addBtn('● Rec', () => toggleRec(), 'rec');
   const shareBtn = addBtn('Share score', () => shareCard(), 'go'); shareBtn.style.display = 'none';
+  // coach apps: small round controls at the top left, always there (back, flip, record) and never over the person
+  if (app.immersive) {
+    bar.classList.add('mini'); resetBtn.style.display = 'none';
+    [...bar.children].forEach(b => { if (b.textContent === 'Flip') b.textContent = '⟲'; });
+    recBtn.textContent = '●'; recBtn.title = 'record'; E.miniRec = true;
+  }
 
   /* challenge links: ?a=<app>&beat=<score>&u=<unit> */
   if (params.get('beat') != null && !isNaN(+params.get('beat'))) {
@@ -471,8 +477,8 @@ export async function run(app) {
       const mt = types.find(t => window.MediaRecorder && MediaRecorder.isTypeSupported(t)) || '';
       rec = new MediaRecorder(stream, mt ? { mimeType: mt, videoBitsPerSecond: 8e6 } : {});
       chunks = []; rec.ondataavailable = e => { if (e.data && e.data.size) chunks.push(e.data); };
-      rec.onstop = () => { const type = rec.mimeType || mt || 'video/mp4'; offerSave(new Blob(chunks, { type }), type); rec = null; E.recording = false; recBtn.textContent = '● Rec'; recBtn.classList.remove('on'); };
-      rec.start(500); E.recording = true; E.hookUntil = E.now() + 2.8; recBtn.textContent = '■ Stop'; recBtn.classList.add('on');
+      rec.onstop = () => { const type = rec.mimeType || mt || 'video/mp4'; offerSave(new Blob(chunks, { type }), type); rec = null; E.recording = false; recBtn.textContent = E.miniRec ? '●' : '● Rec'; recBtn.classList.remove('on'); };
+      rec.start(500); E.recording = true; E.hookUntil = E.now() + 2.8; recBtn.textContent = E.miniRec ? '■' : '■ Stop'; recBtn.classList.add('on');
     } catch (e) { E.toast('Recording is not supported here. Use the phone screen recorder.', 3500); rec = null; }
   }
   function offerSave(blob, type) {

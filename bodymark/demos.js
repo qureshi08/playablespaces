@@ -507,6 +507,8 @@ IDEAS.splice(0,IDEAS.length,...NEW,...IDEAS.filter(x=>!DROP.includes(x.title)));
 
 const MAP={"Bolt ghost race":"ghost","False start test":"falsestart","Standing broad jump":"broadjump","Bar path tracker":"barpath","Handstand judge":"handstand","Front lever angle":"lever","Strict pull up check":"pullup","L sit timer":"lsit","Pistol squat depth":"pistol","Dip depth counter":"dips","Running form score":"runform","Landing knee check":"kneecheck","Daily test series":"daily","Football shot speed":"shotspeed","Keepy ups counter":"keepyups","Vertical jump":"vjump","Sprint timer":"sprint","Six corner footwork":"sixcorner","Push up form counter":"pushup","Honest plank timer":"plank","Squat depth checker":"squat","Skipping rope counter":"rope","One leg balance test":"balance","Wall sit timer":"wallsit","Burpee counter":"burpee","Sit and reach":"sitreach","Dead hang timer":"deadhang","Reaction time test":"reaction","Body Simon Says":"simon","Hole in the wall":"holewall","Body dodge game":"dodge","Try not to laugh":"nolaugh","Jumping jack race":"jacksrace","Freeze dance":"freezedance"};
 const BY={};IDEAS.forEach(i=>{if(MAP[i.title])BY[MAP[i.title]]=i.draw;});
+// previews for the coach apps and the ground drops
+Object.assign(BY,{pushups:BY.pushup,oneleg:BY.balance,squats:BY.squat,sitrise:BY.bodyage||BY.balance,jacks:BY.jacksrace,burpees:BY.burpee});
 BY.bodyage=(c,t)=>{const k=Math.floor(t/4)%2;(k?BY.vjump:BY.balance)(c,t);};
 export function drawDemo(id,c,t){BF=Math.floor(t*12.5)%3;c.setTransform(c.canvas.width/400,0,0,c.canvas.height/300,0,0);c.fillStyle=CARD;c.fillRect(0,0,400,300);const f=BY[id];if(f)try{f(c,t,400,300);}catch(e){}}
 export const HAS_DEMO=id=>!!BY[id];

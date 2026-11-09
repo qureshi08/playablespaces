@@ -6,78 +6,95 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Bodymark">
 <meta name="theme-color" content="#5B2EFF">
-<meta name="description" content="an ai coach that lives in your phone. it watches your push ups and only counts real reps. free, no app.">
+<meta name="description" content="an ai coach that lives in your phone. it watches your workout and only counts real reps. free, no app.">
 <meta property="og:title" content="bodymark: an ai coach that lives in your phone">
-<meta property="og:description" content="it watches your push ups and only counts real reps. free, no app.">
+<meta property="og:description" content="it watches your workout and only counts real reps. free, no app.">
 <title>bodymark: an ai coach that lives in your phone</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,700..900&family=Nunito:wght@600;700;800;900&family=Shantell+Sans:wght@800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 <style>
-/* Home, the heyclicky pattern: show the real product, one ask, nothing else */
-body.h2{background:var(--violet);color:#fff;min-height:100dvh;padding-bottom:calc(96px + env(safe-area-inset-bottom))}
+/* Home, the heyclicky pattern: show the real product, one ask, then the list of coaches */
+body.h2{background:var(--violet);color:#fff;min-height:100dvh}
 .h2 .top{max-width:520px;margin:0 auto;padding:14px 20px 0}
 .h2 .logo{width:150px;height:auto;display:block}
 .h2 h1{font-family:'Archivo',sans-serif;font-weight:900;font-stretch:75%;font-size:clamp(40px,11vw,60px);line-height:.95;margin:14px 0 8px}
 .h2 .sub{font-weight:800;font-size:18px;margin:0 0 18px;opacity:.95}
-.phone{width:min(78vw,300px);aspect-ratio:9/16;margin:0 auto;border-radius:38px;background:#0d0d12;padding:10px;box-shadow:0 24px 60px rgba(18,16,31,.45),inset 0 0 0 2px rgba(255,255,255,.08)}
+.phone{width:min(74vw,290px);aspect-ratio:9/16;margin:0 auto;border-radius:38px;background:#0d0d12;padding:10px;box-shadow:0 24px 60px rgba(18,16,31,.45),inset 0 0 0 2px rgba(255,255,255,.08)}
 .phone canvas{width:100%;height:100%;display:block;border-radius:30px}
-.h2 .facts{text-align:center;font-weight:800;font-size:14px;opacity:.85;margin:16px 0 4px}
-.h2 .next{text-align:center;font-weight:800;font-size:14px;margin:6px 0 0;opacity:.85}
-.h2 .next b{color:var(--yellow)}
-.h2 .foot{text-align:center;color:rgba(255,255,255,.6);font-size:13px;margin:22px 0 0}
-.cta{position:fixed;left:0;right:0;bottom:0;padding:12px 16px calc(12px + env(safe-area-inset-bottom));background:linear-gradient(transparent,rgba(18,16,31,.35) 40%)}
-.cta a{display:block;max-width:520px;margin:0 auto;text-align:center;text-decoration:none;background:var(--yellow);color:var(--ink);font-family:'Archivo',sans-serif;font-weight:900;font-stretch:85%;font-size:24px;padding:16px;border-radius:99px;box-shadow:0 10px 30px rgba(18,16,31,.35)}
+.cta{margin:20px 0 0}
+.cta a{display:block;text-align:center;text-decoration:none;background:var(--yellow);color:var(--ink);font-family:'Archivo',sans-serif;font-weight:900;font-stretch:85%;font-size:24px;padding:16px;border-radius:99px;box-shadow:0 10px 30px rgba(18,16,31,.35)}
+.h2 .facts{text-align:center;font-weight:800;font-size:14px;opacity:.85;margin:14px 0 0}
+.coaches{background:#fff;color:var(--ink);border-radius:30px 30px 0 0;margin:30px -20px 0;padding:26px 20px calc(24px + env(safe-area-inset-bottom))}
+.coaches h2{font-family:'Archivo',sans-serif;font-weight:900;font-stretch:80%;font-size:34px;margin:0 0 4px}
+.coaches .lead{color:var(--grey);font-weight:700;margin:0 0 16px}
+.coach{display:flex;align-items:center;gap:14px;padding:14px;border-radius:22px;background:var(--soft);margin-bottom:10px;text-decoration:none;color:var(--ink)}
+.coach .ic{width:46px;height:46px;border-radius:14px;flex:none;display:flex;align-items:center;justify-content:center;font-family:'Archivo',sans-serif;font-weight:900;font-size:20px;background:var(--violet);color:#fff}
+.coach b{display:block;font-weight:900;font-size:17px;line-height:1.2}
+.coach span{display:block;font-weight:700;font-size:14px;color:var(--grey)}
+.coach .tag{margin-left:auto;font-weight:900;font-size:13px;border-radius:99px;padding:6px 12px;background:var(--yellow);color:var(--ink);white-space:nowrap}
+.coach.locked .ic{background:#cfc6ff}.coach.locked .tag{background:#e6e1ff;color:var(--violet)}
+.how{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:22px 0 6px}
+.how div{background:var(--soft);border-radius:18px;padding:12px 10px;font-weight:800;font-size:13px;text-align:center;line-height:1.3}
+.how div i{display:block;font-style:normal;font-family:'Archivo',sans-serif;font-weight:900;font-size:26px;color:var(--violet)}
+.coaches .foot{color:var(--grey);text-align:center;font-weight:700;font-size:13px;margin:20px 0 0}
 </style>
 </head>
 <body class="h2">
 <div class="top">
   <canvas class="logo" id="logo" width="560" height="196"></canvas>
   <h1>an ai coach that lives in your phone.</h1>
-  <p class="sub">it watches your push ups and only counts real reps.</p>
+  <p class="sub">it watches your workout and only counts real reps.</p>
   <div class="phone"><canvas id="demo" width="540" height="960"></canvas></div>
+  <div class="cta"><a href="app.html?a=pushups" id="go">start push ups →</a></div>
   <p class="facts">free · no app · no sign up · video stays on your phone</p>
-  <p class="next" id="next"></p>
-  <p class="foot">made by anas qureshi</p>
+  <section class="coaches">
+    <h2>coaches</h2>
+    <p class="lead">a new coach every saturday. all of them work on plain ground.</p>
+    <div id="list"></div>
+    <div class="how"><div><i>1</i>lean your phone on your shoe</div><div><i>2</i>get in position, 2 steps away</div><div><i>3</i>the coach counts and talks</div></div>
+    <p class="foot">made by anas qureshi</p>
+  </section>
 </div>
-<div class="cta"><a href="app.html?a=pushups" id="go">start push ups →</a></div>
 <script type="module">
-import { nextDrop } from './all.js';
+import { DROPS, released } from './all.js';
 import { mascot, C, sfx } from './engine.js';
-const nd = nextDrop();
-if (nd) document.getElementById('next').innerHTML = `next coach, ${new Date(nd.date + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }).toLowerCase()}: <b>${nd.pitch}</b>`;
-document.getElementById('go').addEventListener('pointerdown', () => { try { sfx.tap(); } catch (e) {} });
+const day = d => new Date(d + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }).toLowerCase();
+const live = released();
+let list = '<a class="coach" href="app.html?a=pushups"><div class="ic">01</div><div><b>push ups</b><span>only real reps count</span></div><span class="tag">start →</span></a>';
+DROPS.forEach((d, i) => {
+  const n = String(i + 2).padStart(2, '0');
+  list += live.includes(d.id)
+    ? `<a class="coach" href="app.html?a=${d.id}"><div class="ic">${n}</div><div><b>${d.pitch}</b><span>out now</span></div><span class="tag">start →</span></a>`
+    : `<div class="coach locked"><div class="ic">${n}</div><div><b>${d.pitch}</b><span>${day(d.date)}</span></div><span class="tag">soon</span></div>`;
+});
+document.getElementById('list').innerHTML = list;
+document.querySelectorAll('a.coach, #go').forEach(a => a.addEventListener('pointerdown', () => { try { sfx.tap(); } catch (e) {} }));
 await document.fonts.load("900 60px Archivo"); await document.fonts.load("800 30px 'Shantell Sans'");
 
-// The demo shows exactly what the coach screen looks like: camera view, the tracked skeleton, the big count,
+// The demo plays exactly what the coach screen looks like: camera view, tracked skeleton, the count,
 // "clean!" or "half rep", and the depth bar with the line you must reach.
 const g = document.getElementById('demo').getContext('2d'), W = 540, H = 960;
-const REPS = [1, 1, 0, 1, 1, 1, 0, 1]; // 1 = full rep, 0 = half rep that gets called out
+const REPS = [1, 1, 0, 1, 1, 1, 0, 1];
 function ik(ax, ay, bx, by, l1, l2, sg) { const dx = bx - ax, dy = by - ay, d = Math.max(1, Math.min(Math.hypot(dx, dy), l1 + l2 - 0.01)), a = Math.atan2(dy, dx), k = Math.acos(Math.max(-1, Math.min(1, (l1 * l1 + d * d - l2 * l2) / (2 * l1 * d)))), q = a + sg * k; return [ax + Math.cos(q) * l1, ay + Math.sin(q) * l1]; }
 function font(px, fam = 'Archivo', w = 900) { g.font = `${w} ${px}px '${fam}', sans-serif`; if ('fontStretch' in g) g.fontStretch = fam === 'Archivo' ? 'condensed' : 'normal'; }
 function pill(s, y, px, col = '#fff') { font(px); const w = g.measureText(s).width + 70, h = px * 1.25; g.fillStyle = 'rgba(18,16,31,.72)'; g.beginPath(); g.roundRect(W / 2 - w / 2, y - h / 2, w, h, h / 2); g.fill(); g.fillStyle = col; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(s, W / 2, y + px * 0.05); }
 function frame(now) {
   const t = now / 1000, P = 1.5, k = Math.floor(t / P), ph = (t % P) / P, rep = REPS[k % REPS.length];
-  // count: full reps so far in this loop
   let n = 0; for (let i = 0; i < k % REPS.length; i++) n += REPS[i]; if (ph > 0.85 && rep) n++;
   const depth = (rep ? 1 : 0.42) * Math.sin(Math.min(1, ph / 0.85) * Math.PI);
-  // camera view: dark ground, soft light
   const bg = g.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, '#3a3f4a'); bg.addColorStop(0.55, '#262a31'); bg.addColorStop(1, '#4b5a3c'); g.fillStyle = bg; g.fillRect(0, 0, W, H);
   g.fillStyle = 'rgba(255,255,255,.04)'; for (let i = 0; i < 6; i++) g.fillRect(0, 640 + i * 52, W, 2);
-  // the person, side view, drawn like the app draws tracking: yellow lines, violet joints
   const gy = 700, ang = 0.34 - 0.24 * depth, fx = 490, fy = gy - 10, L = 360;
-  g.fillStyle = 'rgba(255,255,255,.18)'; g.fillRect(20, gy + 6, W - 40, 4); // the ground
+  g.fillStyle = 'rgba(255,255,255,.18)'; g.fillRect(20, gy + 6, W - 40, 4);
   const sh = [fx - L * Math.cos(ang), fy - L * Math.sin(ang)], hip = [(fx + sh[0]) / 2 + 6, (fy + sh[1]) / 2 + 4], knee = [(fx + hip[0]) / 2, (fy + hip[1]) / 2 + 2];
   const hand = [sh[0] + 6, gy], el = ik(sh[0], sh[1], hand[0], hand[1], 76, 76, -1), head = [sh[0] - 42 * Math.cos(ang), sh[1] - 42 * Math.sin(ang) - 12];
   g.lineCap = 'round'; g.lineJoin = 'round'; g.strokeStyle = C.yellow; g.lineWidth = 11;
   [[fx, fy, knee], [knee[0], knee[1], hip], [hip[0], hip[1], sh], [sh[0], sh[1], el], [el[0], el[1], hand]].forEach(([x, y, b]) => { g.beginPath(); g.moveTo(x, y); g.lineTo(b[0], b[1]); g.stroke(); });
   g.beginPath(); g.moveTo(sh[0], sh[1]); g.lineTo(head[0], head[1]); g.stroke();
   [[fx, fy], knee, hip, sh, el, hand, head].forEach(([x, y], i) => { g.beginPath(); g.arc(x, y, i === 6 ? 16 : 10, 0, 7); g.fillStyle = C.violet; g.fill(); g.lineWidth = 4; g.strokeStyle = '#fff'; g.stroke(); });
-  // top: the count, nothing else
   pill(String(n), 150, 120);
-  // right after each rep: "clean!" or "half rep"
   if (ph > 0.85 || ph < 0.12) { const ok = ph > 0.85 ? rep : REPS[(k - 1 + REPS.length) % REPS.length]; font(54, 'Shantell Sans', 800); g.save(); g.translate(W / 2, 262); g.rotate(-0.05); g.fillStyle = ok ? C.yellow : C.coral; g.textAlign = 'center'; g.fillText(ok ? 'clean!' : 'half rep', 0, 0); g.restore(); }
-  // bottom: depth bar with the target line
   const bx = 60, bw = W - 120, by = 850, bh = 30;
   g.fillStyle = 'rgba(18,16,31,.6)'; g.beginPath(); g.roundRect(bx, by, bw, bh, bh / 2); g.fill();
   g.fillStyle = depth >= 0.75 ? C.yellow : '#fff'; g.beginPath(); g.roundRect(bx, by, Math.max(bh, bw * Math.min(1, depth)), bh, bh / 2); g.fill();
@@ -88,7 +105,6 @@ function frame(now) {
 }
 requestAnimationFrame(frame);
 
-// logo
 const lg = document.getElementById('logo').getContext('2d');
 (function draw(now) {
   const t = now / 1000, p = (t % 1.6) / 1.6, j = p < 0.45 ? Math.sin(p / 0.45 * Math.PI) : 0;

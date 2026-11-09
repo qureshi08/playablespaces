@@ -94,3 +94,8 @@ button.rec.on{background:var(--coral);color:#fff}
 #saveSheet .box{background:#fff;border-radius:26px;padding:22px;max-width:320px;text-align:center}
 #saveSheet .box p{margin:0 0 14px;font-weight:800}
 #saveSheet .box button{margin:4px}
+/* coach apps: small round controls at the top left, always visible, never over the person */
+#bar.mini{top:calc(10px + env(safe-area-inset-top));bottom:auto;left:10px;right:auto;background:none;padding:0;gap:8px;flex-wrap:nowrap;justify-content:flex-start}
+#bar.mini button{width:46px;height:46px;padding:0;border-radius:50%;font-size:20px;line-height:46px;background:rgba(18,16,31,.72);color:#fff;box-shadow:none}
+#bar.mini button.rec{color:var(--coral)}
+#bar.mini button.rec.on{background:var(--coral);color:#fff}
