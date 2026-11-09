@@ -1,7 +1,7 @@
 // Body Age: three quick tests in a row, combined into one "body age". A wellness estimate, not a diagnosis.
 // 1. One leg stand, eyes closed (Springer 2007 age means). 2. Countermovement jump (Canadian Health Measures Survey medians).
 // 3. Sitting rising test, scored 0 to 10 (Brito et al. 2012); reported beside the body age, not mixed into it, because it has no age norms we can use.
-import { C, dist, seen, clamp, card, text, beep, say, scoreCard, bigNote, labelFor } from './engine.js';
+import { C, dist, seen, clamp, card, text, beep, say, line, scoreCard, bigNote, labelFor } from './engine.js';
 import { PROFILE } from './norms.js';
 
 const L = (a, b, u) => a + (b - a) * u;
@@ -32,8 +32,8 @@ export const BODYAGE = {
   begin(E, n) {
     const st = this.st; st.step = n; st.stepAt = E.now(); this.stepSt = {};
     if (n === 1) say('Step one. Stand on one leg and close your eyes.');
-    if (n === 2) say('Step two. Jump as high as you can, twice.');
-    if (n === 3) say('Step three. Sit down on the floor, then stand back up. Try not to use your hands.');
+    if (n === 2) say((line('stepDone') ? line('stepDone') + ' ' : '') + 'Step two. Jump as high as you can, twice.');
+    if (n === 3) say((line('stepDone') ? line('stepDone') + ' ' : '') + 'Step three. Sit down on the floor, then stand back up. Try not to use your hands.');
     if (n === 4) this.finish(E);
   },
   // a skipped test is left out of the body age, never counted as zero
@@ -50,7 +50,7 @@ export const BODYAGE = {
     const leg = legLen(P), fy = footY(P);
     if (st.step === 1) {
       const up = Math.abs(P[27].y - P[28].y) > leg * 0.12;
-      if (up) { if (s.hs == null) { s.hs = E.t; beep(1100, 0.07); } s.last = E.t; s.cur = E.t - s.hs; if (s.cur >= 30) { st.bal = 30; beep(1400, 0.1); say('Top score!'); this.begin(E, 2); } }
+      if (up) { if (s.hs == null) { s.hs = E.t; s.sec = 0; beep(1100, 0.07); } s.last = E.t; s.cur = E.t - s.hs; { const sec = Math.floor(s.cur); if (sec > s.sec) { s.sec = sec; if (sec % 10 === 0) { E.sfx.milestone(); E.comment(sec === 10 ? 'hold10' : 'hold20', { queue: false, gap: 0 }); } else E.sfx.tick(); } } if (s.cur >= 30) { st.bal = 30; beep(1400, 0.1); say('Top score!'); this.begin(E, 2); } }
       else if (s.hs != null && E.t - s.last > 0.25) { st.bal = s.last - s.hs; say('Foot down. ' + Math.round(st.bal) + ' seconds.'); setTimeout(() => this.begin(E, 2), 1500); s.hs = null; st.step = 1.5; }
     }
     if (st.step === 2) {
@@ -92,7 +92,7 @@ export const BODYAGE = {
     st.res = { body, diff, bal, jump, srt: st.srt };
     const pill = diff < 0 ? (-diff) + ' YEARS YOUNGER' : diff > 0 ? diff + ' YEARS OLDER' : 'RIGHT ON YOUR AGE';
     st.res.pill = pill;
-    say('Your body age is ' + body + '. ' + (diff < 0 ? (-diff) + ' years younger than you.' : diff > 0 ? diff + ' years older than you.' : 'Right on your age.'));
+    say('Your body age is ' + body + '. ' + (diff < 0 ? (-diff) + ' years younger than you.' : diff > 0 ? diff + ' years older than you.' : 'Right on your age.')); E.comment(diff < 0 ? 'bodyYounger' : diff > 0 ? 'bodyOlder' : 'bodySame', { gap: 0 });
     E.log(body, 'yrs', 'low', null, { pill, who: 'I am ' + age + ' · wellness estimate', label: labelFor('bodyage', p) });
   },
   draw(g, E) {

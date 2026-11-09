@@ -78,6 +78,24 @@ export const sfx = {
   whoosh() { noise(0.25, 0.08, 0, 2500); },
   result() { noise(0.2, 0.06, 0, 3000); [659, 784, 988].forEach((f, i) => tone(f, 0.18, 0.18, 'sine', 0.05 + i * 0.07)); },
   best() { [523, 659, 784, 1047].forEach((f, i) => tone(f, i === 3 ? 0.4 : 0.14, 0.22, 'triangle', i * 0.09)); },
+  // in-game sounds
+  gun() { noise(0.35, 0.35, 0, 400); tone(90, 0.25, 0.4, 'sine', 0, 0.5); },                    // starting pistol crack and thump
+  takeoff() { tone(300, 0.18, 0.1, 'sine', 0, 2.2); },                                             // quick upward whoop
+  land() { tone(120, 0.14, 0.32, 'sine', 0, 0.6); noise(0.08, 0.08, 0, 600); },                   // soft thud on landing
+  tick() { tone(1800, 0.025, 0.06, 'square'); },                                                    // clock tick each second of a hold
+  milestone() { tone(1046, 0.5, 0.16, 'sine'); tone(1568, 0.6, 0.08, 'sine', 0.01); },            // bell every ten seconds
+  whooshIn() { try { const a = audio(), t = a.currentTime, n = a.createBufferSource(), d = 1.6, b = a.createBuffer(1, a.sampleRate * d, a.sampleRate), ch = b.getChannelData(0); for (let i = 0; i < ch.length; i++) ch[i] = Math.random() * 2 - 1; const f = a.createBiquadFilter(); f.type = 'bandpass'; f.Q.value = 2; f.frequency.setValueAtTime(300, t); f.frequency.exponentialRampToValueAtTime(2400, t + d); const g = a.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.16, t + d * 0.9); g.gain.exponentialRampToValueAtTime(0.0001, t + d); n.buffer = b; n.connect(f); f.connect(g); g.connect(a.destination); n.start(t); } catch (e) {} },
+  fit() { [784, 988, 1175, 1568].forEach((f, i) => tone(f, 0.22, 0.16, 'triangle', i * 0.05)); },
+  crash() { noise(0.6, 0.4, 0, 120); tone(70, 0.5, 0.4, 'sine', 0, 0.5); },
+  hit() { tone(160, 0.16, 0.35, 'sine', 0, 0.5); noise(0.1, 0.15, 0, 900); },
+  point() { tone(1320, 0.07, 0.12, 'triangle'); tone(1760, 0.09, 0.1, 'triangle', 0.05); },
+  lose() { [392, 349, 311, 262].forEach((f, i) => tone(f, i === 3 ? 0.5 : 0.2, 0.18, 'triangle', i * 0.18)); },
+  scratch() { tone(900, 0.35, 0.22, 'sawtooth', 0, 0.15); noise(0.3, 0.12, 0, 1500); },        // record scratch when the music stops
+  buzz() { tone(150, 0.35, 0.22, 'sawtooth'); tone(155, 0.35, 0.18, 'sawtooth'); },
+  cheer() { // a short crowd swell: many voices made of filtered noise with a wobble
+    try { const a = audio(), t = a.currentTime, d = 1.8, n = a.createBufferSource(), b = a.createBuffer(1, a.sampleRate * d, a.sampleRate), ch = b.getChannelData(0); for (let i = 0; i < ch.length; i++) ch[i] = (Math.random() * 2 - 1) * (0.6 + 0.4 * Math.sin(i / a.sampleRate * 2 * Math.PI * 7)); const f = a.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 1100; f.Q.value = 0.7; const g = a.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.22, t + 0.35); g.gain.exponentialRampToValueAtTime(0.0001, t + d); n.buffer = b; n.connect(f); f.connect(g); g.connect(a.destination); n.start(t); } catch (e) {}
+    [523, 659, 784].forEach((f, i) => tone(f, 0.3, 0.12, 'triangle', 0.1 + i * 0.08));
+  },
 };
 // old beep calls now play a soft blip in the same pitch range
 export function beep(f = 880, d = 0.15, vol = 0.35) { tone(f, Math.min(d, 0.25), Math.min(vol, 0.3) * 0.8, 'triangle'); }
@@ -86,9 +104,29 @@ export function beep(f = 880, d = 0.15, vol = 0.35) { tone(f, Math.min(d, 0.25),
 const VOICE_DIR = new URL('./voice/', import.meta.url).href;
 let clipNames = null; const clipBuf = {};
 const slugV = t => t.toLowerCase().replace(/'/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+let COMMENTS = {};
 async function loadVoice() {
   try { clipNames = new Set(await (await fetch(VOICE_DIR + 'index.json')).json()); } catch (e) { clipNames = new Set(); }
+  try { COMMENTS = await (await fetch(VOICE_DIR + 'commentary.json')).json(); } catch (e) {}
   for (const k of clipNames) clip(k); // warm the cache in the background
+}
+// the coach's live commentary: a recorded variant it has not just used; silent rather than robotic if none is recorded
+const lastLine = {};
+function pickLine(event) {
+  const opts = (COMMENTS[event] || []).filter(t => clipNames && clipNames.has(slugV(t)));
+  if (!opts.length) return null;
+  const pool = opts.length > 1 ? opts.filter(t => t !== lastLine[event]) : opts;
+  const t = pool[Math.floor(Math.random() * pool.length)]; lastLine[event] = t; return t;
+}
+let voiceUntil = 0, lastComment = 0;
+export async function comment(event, { chance = 1, queue = true, gap = 4 } = {}) {
+  if (!clipNames) await loadVoice();
+  const a = audio(), now = a.currentTime;
+  if (Math.random() > chance) return;
+  if (!queue && now < voiceUntil) return;               // never talk over a line that is still playing
+  if (performance.now() / 1000 - lastComment < gap && event !== 'noRep') return;   // and don't chatter
+  const t = pickLine(event); if (!t) return;
+  lastComment = performance.now() / 1000; say(t, { queue: true });
 }
 async function clip(k) {
   if (clipBuf[k]) return clipBuf[k];
@@ -119,24 +157,41 @@ function toClips(text) {
   return parts;
 }
 let voiceGen = 0;
-export async function say(text) {
-  if (/^\d+$/.test(text)) sfx.rep(); else if (/^no rep/i.test(text)) sfx.bad();
-  const gen = ++voiceGen; try { speechSynthesis.cancel(); } catch (e) {}
+// say(text): a new line cuts off the old one. say(text, { queue: true }): it waits for the current line to finish.
+// Lines play one after another from a chain: a queued line starts only when the line before it has finished playing.
+let chain = Promise.resolve();
+export function say(text, { queue = false } = {}) {
+  if (/^\d+$/.test(text)) sfx.rep();
+  if (/^no rep/i.test(text)) sfx.bad();
+  if (!queue) { say.stop(); chain = Promise.resolve(); try { speechSynthesis.cancel(); } catch (e) {} }
+  const gen = voiceGen;
+  chain = chain.then(() => speakNow(text, gen)).catch(() => {});
+  return chain;
+}
+const sleep = ms => new Promise(r => setTimeout(r, Math.max(0, ms)));
+async function speakNow(text, gen) {
   if (!clipNames) await loadVoice();
+  if (gen !== voiceGen) return;
+  const isCount = /^\d+$/.test(text);
+  if (/^no rep/i.test(text)) { const v = pickLine('noRep'); if (v) text = v; }   // a varied coach line instead of the same words
   const a = audio(); let t = a.currentTime + 0.02;
   for (const p of toClips(text)) {
     if (gen !== voiceGen) return;
     if (typeof p === 'string') {
       const b = await clip(p); if (!b || gen !== voiceGen) continue;
       const src = a.createBufferSource(); src.buffer = b; src.connect(a.destination); t = Math.max(t, a.currentTime); src.start(t); t += b.duration + 0.04;
-      say.cur = say.cur || []; say.cur.push(src);
+      voiceUntil = t; say.cur = say.cur || []; say.cur.push(src);
     } else {
-      await new Promise(r => setTimeout(r, Math.max(0, (t - a.currentTime) * 1000)));
-      if (gen !== voiceGen) return; fallbackSay(p.tts);
+      await sleep((t - a.currentTime) * 1000);
+      if (gen !== voiceGen) return; fallbackSay(p.tts); t = a.currentTime + p.tts.length * 0.065; voiceUntil = t;
     }
   }
+  await sleep((t - a.currentTime) * 1000);                 // hold the chain until this line has been heard
+  // every fifth counted rep, the coach adds a word of encouragement
+  if (isCount && +text > 0 && +text % 5 === 0 && gen === voiceGen) comment('repComment', { chance: 0.75 });
 }
-say.stop = () => { voiceGen++; (say.cur || []).forEach(s => { try { s.stop(); } catch (e) {} }); say.cur = []; };
+export const line = event => pickLine(event);
+say.stop = () => { voiceGen++; (say.cur || []).forEach(s => { try { s.stop(); } catch (e) {} }); say.cur = []; voiceUntil = 0; };
 // last resort for any line without a recording: the most natural voice the device has
 let bestVoice;
 function fallbackSay(text) {
@@ -236,14 +291,19 @@ export async function run(app) {
       logResult(app.id, v, unit, better);
       // keep the result and a snapshot of this moment for the share card
       E.result = { v, unit, better, rank, extra };
-      { const prev = store.get('moves:history', []).filter(x => x.a === app.id && x.u === unit).slice(0, -1).map(x => x.v); const isBest = prev.length && (better === 'low' ? v < Math.min(...prev) : v > Math.max(...prev)); (isBest ? sfx.best : sfx.result)(); }
+      { const prev = store.get('moves:history', []).filter(x => x.a === app.id && x.u === unit).slice(0, -1).map(x => x.v); const isBest = prev.length && (better === 'low' ? v < Math.min(...prev) : v > Math.max(...prev)); (isBest ? sfx.best : sfx.result)();
+        // the coach reacts once the result line has been said: new best first, otherwise by how good the rank is
+        const pm = rank && /Better than (d+)%/.exec(rank), p = pm ? +pm[1] : null;
+        if (isBest) { setTimeout(() => sfx.cheer(), 250); comment('newBest', { gap: 0 }); }
+        else if (p != null) comment(p >= 70 ? 'resultHigh' : p >= 40 ? 'resultMid' : 'resultLow', { chance: 0.85, gap: 0 }); }
       // snapshot a moment later, so the photo shows the score on screen
       setTimeout(() => { try { const s = document.createElement('canvas'), k = 540 / Math.max(cv.width, cv.height); s.width = Math.round(cv.width * k); s.height = Math.round(cv.height * k); s.getContext('2d').drawImage(cv, 0, 0, s.width, s.height); E.snap = s; } catch (e) {} }, 180);
       shareBtn.style.display = '';
-      if (E.beat != null) { const won = better === 'low' ? v < E.beat : v > E.beat; if (won && !E.beatWon) { E.beatWon = true; setTimeout(() => say('You beat the challenge!'), 1200); } }
+      if (E.beat != null) { const won = better === 'low' ? v < E.beat : v > E.beat; if (won && !E.beatWon) { E.beatWon = true; sfx.cheer(); comment('challengeWon', { gap: 0 }); } }
     },
     toast(s, ms = 1800) { const el = $('#toast'); el.textContent = s; el.classList.add('on'); clearTimeout(el._t); el._t = setTimeout(() => el.classList.remove('on'), ms); },
-    m(px) { return E.ppm ? px / E.ppm : null; }, // pixels to metres, once the app has seen you standing
+    m(px) { return E.ppm ? px / E.ppm : null; },
+    comment, sfx, // pixels to metres, once the app has seen you standing
   };
   E.video = video;
   app.reset && app.reset(E);
@@ -432,6 +492,7 @@ export async function run(app) {
       $('#intro').classList.add('off');
       E.hookUntil = E.now() + 2.8;
       app.start && app.start(E);
+      setTimeout(() => comment('start', { queue: false }), 1600);
       loop(models);
     } catch (e) { console.error(e); st.textContent = 'Could not load the tracker. Check the internet connection and press Start again.'; }
   };
@@ -469,6 +530,8 @@ export async function run(app) {
           if (d) { const bb = d.boundingBox, cx = bb.originX + bb.width / 2; E.ball = { x: mirror ? W - cx : cx, y: bb.originY + bb.height / 2, r: Math.max(bb.width, bb.height) / 2, t: E.t }; }
           else if (E.ball && E.t - E.ball.t > 0.3) E.ball = null;
         }
+        // if the person stays out of frame for 3 seconds, the coach tells them (at most every 12 seconds)
+        if (E.msg) { E.msgSince = E.msgSince || E.t; if (E.t - E.msgSince > 3 && (!E.lastNV || E.t - E.lastNV > 12)) { E.lastNV = E.t; comment('notVisible', { queue: false, gap: 0 }); } } else E.msgSince = 0;
         E.msg = '';
         try { app.frame && app.frame(E); } catch (e) { console.error(e); }
         drawFrame(mirror);

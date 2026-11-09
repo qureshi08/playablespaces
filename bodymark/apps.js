@@ -15,7 +15,9 @@ const fmt = s => s.toFixed(2) + ' s';
 
 /* shared hold timer: call with inHold every frame; returns finished hold length or 0 */
 function holdTimer(st, E, inHold, grace = 0.3) {
-  if (inHold) { if (st.hs == null) { st.hs = E.t; beep(1100, 0.07); } st.lastIn = E.t; st.cur = E.t - st.hs; return 0; }
+  if (inHold) { if (st.hs == null) { st.hs = E.t; st.sec = 0; beep(1100, 0.07); } st.lastIn = E.t; st.cur = E.t - st.hs;
+    const sec = Math.floor(st.cur); if (sec > (st.sec || 0)) { st.sec = sec; if (sec % 10 === 0) { E.sfx.milestone(); if (sec <= 30 || sec % 20 === 0) E.comment(sec === 10 ? 'hold10' : sec === 20 ? 'hold20' : sec === 30 ? 'hold30' : 'holdLong', { queue: false, gap: 0 }); } else E.sfx.tick(); }
+    return 0; }
   if (st.hs != null && E.t - st.lastIn > grace) { const d = st.lastIn - st.hs; st.hs = null; st.cur = 0; return d; }
   return 0;
 }
@@ -154,7 +156,7 @@ ghost: {
     const st = this.st, S = E.S; if (!S.gates || S.gates.length < 2) { E.toast('Set the lines first'); return; }
     clearTimeout(this.timer); Object.assign(st, { phase: 'marks', you: null, t0: null, startX: null, fs: false, path: [] });
     say('On your marks'); this.timer = setTimeout(() => { st.phase = 'set'; say('Set'); st.startX = null;
-      this.timer = setTimeout(() => { if (st.phase !== 'set') return; beep(1000, 0.3, 0.5); st.t0 = E.now(); st.phase = 'run'; }, 1600 + Math.random() * 1000); }, 2600);
+      this.timer = setTimeout(() => { if (st.phase !== 'set') return; E.sfx.gun(); st.t0 = E.now(); st.phase = 'run'; E.comment('theyreOff', { queue: false, gap: 0 }); }, 1600 + Math.random() * 1000); }, 2600);
   },
   frame(E) {
     const st = this.st, P = E.P, S = E.S; if (!S.gates || S.gates.length < 2) return;
@@ -171,7 +173,7 @@ ghost: {
         const lastAll = store.get('moves:ghostlast', {}), last = lastAll[S.dist]; st.prev = last ? last.you : null;
         lastAll[S.dist] = { you: st.you, at: Date.now() }; store.set('moves:ghostlast', lastAll);
         st.rank = 'I ran ' + st.pct + '% of Bolt\'s speed';
-        say(st.pct + ' percent of Bolt\'s speed.');
+        say(st.pct + ' percent of Bolt\'s speed.'); E.comment(st.you < bt ? 'raceWin' : 'raceLose', { gap: 0 });
         E.log(st.you, 's', 'low', st.rank);
       }
       if (el > 15) { st.phase = 'idle'; E.toast('No finish seen. Press Race again'); }

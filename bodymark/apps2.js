@@ -18,7 +18,9 @@ const bodyH = P => Math.abs(footY(P) - P[0].y);
 const fromHoriz = (a, b) => Math.abs(Math.atan2(Math.abs(b.y - a.y), Math.abs(b.x - a.x)) * 180 / Math.PI);
 
 function holdTick(st, E, ok, grace = 0.3) {
-  if (ok) { if (st.hs == null) { st.hs = E.t; beep(1100, 0.07); } st.lastIn = E.t; st.cur = E.t - st.hs; return 0; }
+  if (ok) { if (st.hs == null) { st.hs = E.t; st.sec = 0; beep(1100, 0.07); } st.lastIn = E.t; st.cur = E.t - st.hs;
+    const sec = Math.floor(st.cur); if (sec > (st.sec || 0)) { st.sec = sec; if (sec % 10 === 0) { E.sfx.milestone(); if (sec <= 30 || sec % 20 === 0) E.comment(sec === 10 ? 'hold10' : sec === 20 ? 'hold20' : sec === 30 ? 'hold30' : 'holdLong', { queue: false, gap: 0 }); } else E.sfx.tick(); }
+    return 0; }
   if (st.hs != null && E.t - st.lastIn > grace) { const d = st.lastIn - st.hs; st.hs = null; st.cur = 0; return d; }
   return 0;
 }
@@ -28,8 +30,8 @@ function flight(st, E, y, size, th = 0.04) {
   if (!st.air && st.py != null && Math.abs(y - st.py) < size * 0.012) st.base = st.base == null ? y : st.base * 0.85 + y * 0.15;
   if (st.base != null) {
     const lim = st.base - size * th;
-    if (!st.air && y < lim) { st.air = true; st.t0 = crossT(st.py, y, lim, st.pt, t) ?? t; ev = { type: 'up', contact: st.tl != null ? st.t0 - st.tl : null }; }
-    else if (st.air && y >= lim) { st.air = false; const t1 = crossT(st.py, y, lim, st.pt, t) ?? t; st.tl = t1; ev = { type: 'down', ft: t1 - st.t0 }; }
+    if (!st.air && y < lim) { st.air = true; st.t0 = crossT(st.py, y, lim, st.pt, t) ?? t; ev = { type: 'up', contact: st.tl != null ? st.t0 - st.tl : null }; E.sfx.takeoff(); }
+    else if (st.air && y >= lim) { st.air = false; const t1 = crossT(st.py, y, lim, st.pt, t) ?? t; st.tl = t1; ev = { type: 'down', ft: t1 - st.t0 }; E.sfx.land(); }
   }
   st.py = y; st.pt = t; return ev;
 }
@@ -129,7 +131,7 @@ falsestart: {
   reset(E) { clearTimeout(this.timer); this.st = { phase: 'idle', res: null, best: null }; },
   go(E) {
     const st = this.st; clearTimeout(this.timer); Object.assign(st, { phase: 'marks', res: null, ref: null });
-    say('Set'); this.timer = setTimeout(() => { st.phase = 'armed'; st.ref = null; this.timer = setTimeout(() => { if (st.phase !== 'armed') return; beep(1000, 0.25, 0.5); st.tb = E.now(); st.phase = 'wait'; }, rnd(1500, 3500)); }, 1200);
+    say('Set'); this.timer = setTimeout(() => { st.phase = 'armed'; st.ref = null; this.timer = setTimeout(() => { if (st.phase !== 'armed') return; E.sfx.gun(); st.tb = E.now(); st.phase = 'wait'; }, rnd(1500, 3500)); }, 1200);
   },
   frame(E) {
     const st = this.st, P = E.P; if (!seen(P, [11, 12, 23, 24], 0.4)) { if (st.phase !== 'idle') E.msg = 'Keep your whole body in the picture'; return; }
@@ -501,8 +503,8 @@ simon: {
   frame(E) {
     const st = this.st; if (st.phase === 'show') { const k = Math.floor((E.now() - st.showAt) / 1.1); if (k >= st.seq.length) { st.phase = 'copy'; st.i = 0; st.since = E.now(); say('Go'); } else if (k !== st.shown) { st.shown = k; say(this.POSES[st.seq[k]][0], 1.2); } return; }
     if (st.phase !== 'copy') return; const p = this.pose(E.Sm), want = st.seq[st.i];
-    if (p === want) { if (!st.hold) st.hold = E.now(); if (E.now() - st.hold > 0.35) { beep(1300, 0.05); st.i++; st.hold = 0; st.since = E.now(); if (st.i >= st.seq.length) { setTimeout(() => this.next(E), 700); st.phase = 'wait'; } } }
-    else { st.hold = 0; if (E.now() - st.since > 4) { st.phase = 'out'; say('Out! Level ' + (st.level - 1)); E.log(st.level - 1, 'level'); } }
+    if (p === want) { if (!st.hold) st.hold = E.now(); if (E.now() - st.hold > 0.35) { E.sfx.point(); st.i++; st.hold = 0; st.since = E.now(); if (st.i >= st.seq.length) { setTimeout(() => this.next(E), 700); st.phase = 'wait'; } } }
+    else { st.hold = 0; if (E.now() - st.since > 4) { st.phase = 'out'; E.sfx.lose(); say('Out! Level ' + (st.level - 1)); E.comment('gameOver', { gap: 0 }); E.log(st.level - 1, 'level'); } }
   },
   draw(g, E) {
     const st = this.st, U = E.U, W = E.W;
@@ -518,13 +520,13 @@ holewall: {
   buttons: [{ label: 'Go', fn(E) { Object.assign(this.st, { phase: 'run', t0: E.now(), score: 0, round: 0 }); this.newWall(E); } }],
   SHAPES: [{ l: -2.6, r: 2.6, ll: -0.2, rl: 0.2 }, { l: -1.57, r: 1.57, ll: -0.2, rl: 0.2 }, { l: -2.6, r: 1.57, ll: -0.5, rl: 0.15 }, { l: -1.57, r: 2.6, ll: -0.15, rl: 0.5 }, { l: -0.6, r: 0.6, ll: -0.5, rl: 0.5 }],
   reset(E) { this.st = { phase: 'idle', score: 0 }; },
-  newWall(E) { const st = this.st; st.shape = pick(this.SHAPES); st.w0 = E.now(); st.round++; },
+  newWall(E) { const st = this.st; st.shape = pick(this.SHAPES); st.w0 = E.now(); st.round++; E.sfx.whooshIn(); },
   limb(P, a, b) { return Math.atan2(P[b].x - P[a].x, P[b].y - P[a].y); },
   frame(E) {
     const st = this.st; if (st.phase !== 'run') return; const P = E.Sm, el = E.now() - st.w0, T = Math.max(2.2, 4 - st.round * 0.15);
     if (el >= T) {
       let ok = 0; if (seen(P, [11, 12, 15, 16, 23, 24, 27, 28], 0.35)) { const leftIsScreenLeft = P[11].x < P[12].x; const [lsA, lsB, rsA, rsB] = leftIsScreenLeft ? [11, 15, 12, 16] : [12, 16, 11, 15]; const [lhA, lhB, rhA, rhB] = leftIsScreenLeft ? [23, 27, 24, 28] : [24, 28, 23, 27]; const errs = [[this.limb(P, lsA, lsB), st.shape.l], [this.limb(P, rsA, rsB), st.shape.r], [this.limb(P, lhA, lhB), st.shape.ll], [this.limb(P, rhA, rhB), st.shape.rl]].map(([a, b]) => Math.abs(Math.atan2(Math.sin(a - b), Math.cos(a - b)))); ok = clamp(100 - errs.reduce((s, x) => s + x, 0) / 4 * 120, 0, 100); }
-      st.last = ok; if (ok >= 60) { st.score++; beep(1400, 0.08); say('Fit!'); this.newWall(E); } else { st.phase = 'out'; say('Crash! ' + st.score + ' walls.'); E.log(st.score, 'walls'); }
+      st.last = ok; if (ok >= 60) { st.score++; E.sfx.fit(); say('Fit!'); this.newWall(E); } else { st.phase = 'out'; E.sfx.crash(); say('Crash! ' + st.score + ' walls.'); E.comment('gameOver', { gap: 0 }); E.log(st.score, 'walls'); }
     }
   },
   draw(g, E) {
@@ -549,8 +551,8 @@ dodge: {
     const st = this.st; if (st.phase !== 'run') return; const now = E.now(), W = E.W, H = E.H, P = E.Sm;
     if (now >= st.next) { st.balls.push({ x: rnd(W * 0.08, W * 0.92), y: -E.U * 5, v: H * rnd(0.35, 0.55) * (1 + st.score * 0.02), r: E.U * rnd(4, 6), t: now }); st.next = now + Math.max(0.35, 1.1 - st.score * 0.02); }
     st.balls.forEach(b => { b.y += b.v * (now - b.t); b.t = now; });
-    if (P) st.balls.forEach(b => { if (!b.hit && [0, 11, 12, 13, 14, 15, 16, 23, 24, 25, 26].some(i => P[i].v > 0.4 && dist(P[i], b) < b.r + E.U * 2)) { b.hit = true; st.hits++; beep(220, 0.15); if (st.hits >= 3) { st.phase = 'out'; say('Out! ' + st.score + ' dodged.'); E.log(st.score, 'dodged'); } } });
-    st.balls = st.balls.filter(b => { if (b.y > H + b.r) { if (!b.hit) st.score++; return false; } return !b.hit; });
+    if (P) st.balls.forEach(b => { if (!b.hit && [0, 11, 12, 13, 14, 15, 16, 23, 24, 25, 26].some(i => P[i].v > 0.4 && dist(P[i], b) < b.r + E.U * 2)) { b.hit = true; st.hits++; E.sfx.hit(); E.comment('ouch', { queue: false, chance: 0.6 }); if (st.hits >= 3) { st.phase = 'out'; E.sfx.lose(); say('Out! ' + st.score + ' dodged.'); E.comment('gameOver', { gap: 0 }); E.log(st.score, 'dodged'); } } });
+    st.balls = st.balls.filter(b => { if (b.y > H + b.r) { if (!b.hit) { st.score++; if (st.score % 5 === 0) E.comment('nicePlay', { queue: false, chance: 0.6 }); } return false; } return !b.hit; });
   },
   draw(g, E) { const st = this.st; st.balls.forEach(b => { g.beginPath(); g.arc(b.x, b.y, b.r, 0, 7); g.fillStyle = C.mad; g.fill(); g.lineWidth = E.U * 0.5; g.strokeStyle = C.paper; g.stroke(); }); if (st.phase === 'idle') bigNote(g, E, 'Press Go'); scoreCard(g, E, 'Dodged', String(st.score), 'hits ' + st.hits + ' of 3' + (st.phase === 'out' ? ', out!' : ''), E.U * 5, E.H * 0.05); },
 },
@@ -574,7 +576,7 @@ jacksrace: {
   frame(E) {
     const st = this.st, now = E.now(); if (st.phase !== 'count' || now < st.t0) return;
     E.Ps.slice(0, 2).forEach((P, i) => { if (!seen(P, [0, 15, 16, 27, 28, 23, 24], 0.35)) return; const open = P[15].y < P[0].y && P[16].y < P[0].y && Math.abs(P[27].x - P[28].x) > dist(P[23], P[24]) * 1.6, closed = P[15].y > P[11].y && P[16].y > P[12].y; if (open && !st.open[i]) { st.open[i] = true; } if (closed && st.open[i]) { st.open[i] = false; st.n[i]++; beep(i ? 1100 : 800, 0.03); } });
-    if (now - st.t0 >= E.S.secs) { st.phase = 'done'; const [a, b] = st.n; say(a === b ? 'Draw!' : (a > b ? 'Left wins!' : 'Right wins!')); E.log(Math.max(a, b), 'jacks'); }
+    if (now - st.t0 >= E.S.secs) { st.phase = 'done'; const [a, b] = st.n; E.sfx.cheer(); say(a === b ? 'Draw!' : (a > b ? 'Left wins!' : 'Right wins!')); E.log(Math.max(a, b), 'jacks'); }
   },
   draw(g, E) {
     const st = this.st, W = E.W, H = E.H, U = E.U;
@@ -597,11 +599,11 @@ freezedance: {
   stop() { clearInterval(this.iv); },
   frame(E) {
     const st = this.st, now = E.now();
-    if (st.phase === 'music' && now >= st.until) { this.stop(); st.phase = 'freeze'; st.fz = now; st.ref = null; st.moved = []; say('Freeze!'); }
+    if (st.phase === 'music' && now >= st.until) { this.stop(); st.phase = 'freeze'; st.fz = now; st.ref = null; st.moved = []; E.sfx.scratch(); E.comment('freeze', { queue: false, gap: 0 }); }
     if (st.phase === 'freeze') {
       const Ps = E.Ps; if (now - st.fz > 0.6 && !st.ref) st.ref = Ps.map(P => P.map(p => ({ ...p })));
-      if (st.ref) Ps.forEach((P, i) => { const R = st.ref[i]; if (!R || !seen(P, [0, 11, 12], 0.4)) return; const s = bodyH(P) || 1, m = [0, 11, 12, 15, 16, 25, 26].reduce((a, k) => a + dist(P[k], R[k]), 0) / 7 / s; if (m > 0.04 && !st.moved.includes(i)) { st.moved.push(i); beep(200, 0.2); } });
-      if (now - st.fz > 2.6) { if (st.moved.length) say(st.moved.length === 1 ? 'Someone moved!' : 'A few people moved!'); st.phase = 'music'; st.until = now + rnd(4, 9); setTimeout(() => this.play(E), 1500); st.showMoved = st.moved.slice(); st.showAt = now; }
+      if (st.ref) Ps.forEach((P, i) => { const R = st.ref[i]; if (!R || !seen(P, [0, 11, 12], 0.4)) return; const s = bodyH(P) || 1, m = [0, 11, 12, 15, 16, 25, 26].reduce((a, k) => a + dist(P[k], R[k]), 0) / 7 / s; if (m > 0.04 && !st.moved.includes(i)) { st.moved.push(i); E.sfx.buzz(); } });
+      if (now - st.fz > 2.6) { if (st.moved.length) E.comment('caught', { queue: false, gap: 0 }); else E.comment('allStill', { queue: false, gap: 0 }); st.phase = 'music'; st.until = now + rnd(4, 9); setTimeout(() => this.play(E), 1500); st.showMoved = st.moved.slice(); st.showAt = now; }
     }
   },
   draw(g, E) {
