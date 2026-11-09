@@ -50,13 +50,20 @@ export function logResult(app, value, unit, better = 'high') {
 }
 let actx = null;
 export function audio() { actx = actx || new (window.AudioContext || window.webkitAudioContext)(); return actx; }
+// every sound and voice line goes through one master output, which feeds the speakers and the screen recording
+let masterNode = null, recDest = null;
+export function master() {
+  if (!masterNode) { const a = audio(); masterNode = a.createGain(); masterNode.connect(a.destination); try { recDest = a.createMediaStreamDestination(); masterNode.connect(recDest); } catch (e) {} }
+  return masterNode;
+}
+export const recordingAudio = () => { master(); return recDest ? recDest.stream.getAudioTracks() : []; };
 /* ---------- sound effects: soft, rounded tones with quick envelopes (no harsh square beeps) ---------- */
 function tone(f, d = 0.12, vol = 0.25, type = 'sine', at = 0, slide = 0) {
   try {
     const a = audio(), t = a.currentTime + at, o = a.createOscillator(), g = a.createGain();
     o.type = type; o.frequency.setValueAtTime(f, t); if (slide) o.frequency.exponentialRampToValueAtTime(f * slide, t + d);
     g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + 0.008); g.gain.exponentialRampToValueAtTime(0.0001, t + d);
-    o.connect(g); g.connect(a.destination); o.start(t); o.stop(t + d + 0.02);
+    o.connect(g); g.connect(master()); o.start(t); o.stop(t + d + 0.02);
   } catch (e) {}
 }
 function noise(d = 0.18, vol = 0.12, at = 0, hp = 1200) {
@@ -64,7 +71,7 @@ function noise(d = 0.18, vol = 0.12, at = 0, hp = 1200) {
     const a = audio(), t = a.currentTime + at, n = a.createBufferSource(), b = a.createBuffer(1, Math.floor(a.sampleRate * d), a.sampleRate), ch = b.getChannelData(0);
     for (let i = 0; i < ch.length; i++) ch[i] = (Math.random() * 2 - 1) * (1 - i / ch.length);
     const f = a.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = hp; const g = a.createGain(); g.gain.value = vol;
-    n.buffer = b; n.connect(f); f.connect(g); g.connect(a.destination); n.start(t);
+    n.buffer = b; n.connect(f); f.connect(g); g.connect(master()); n.start(t);
   } catch (e) {}
 }
 export const sfx = {
@@ -84,7 +91,7 @@ export const sfx = {
   land() { tone(120, 0.14, 0.32, 'sine', 0, 0.6); noise(0.08, 0.08, 0, 600); },                   // soft thud on landing
   tick() { tone(1800, 0.025, 0.06, 'square'); },                                                    // clock tick each second of a hold
   milestone() { tone(1046, 0.5, 0.16, 'sine'); tone(1568, 0.6, 0.08, 'sine', 0.01); },            // bell every ten seconds
-  whooshIn() { try { const a = audio(), t = a.currentTime, n = a.createBufferSource(), d = 1.6, b = a.createBuffer(1, a.sampleRate * d, a.sampleRate), ch = b.getChannelData(0); for (let i = 0; i < ch.length; i++) ch[i] = Math.random() * 2 - 1; const f = a.createBiquadFilter(); f.type = 'bandpass'; f.Q.value = 2; f.frequency.setValueAtTime(300, t); f.frequency.exponentialRampToValueAtTime(2400, t + d); const g = a.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.16, t + d * 0.9); g.gain.exponentialRampToValueAtTime(0.0001, t + d); n.buffer = b; n.connect(f); f.connect(g); g.connect(a.destination); n.start(t); } catch (e) {} },
+  whooshIn() { try { const a = audio(), t = a.currentTime, n = a.createBufferSource(), d = 1.6, b = a.createBuffer(1, a.sampleRate * d, a.sampleRate), ch = b.getChannelData(0); for (let i = 0; i < ch.length; i++) ch[i] = Math.random() * 2 - 1; const f = a.createBiquadFilter(); f.type = 'bandpass'; f.Q.value = 2; f.frequency.setValueAtTime(300, t); f.frequency.exponentialRampToValueAtTime(2400, t + d); const g = a.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.16, t + d * 0.9); g.gain.exponentialRampToValueAtTime(0.0001, t + d); n.buffer = b; n.connect(f); f.connect(g); g.connect(master()); n.start(t); } catch (e) {} },
   fit() { [784, 988, 1175, 1568].forEach((f, i) => tone(f, 0.22, 0.16, 'triangle', i * 0.05)); },
   crash() { noise(0.6, 0.4, 0, 120); tone(70, 0.5, 0.4, 'sine', 0, 0.5); },
   hit() { tone(160, 0.16, 0.35, 'sine', 0, 0.5); noise(0.1, 0.15, 0, 900); },
@@ -93,7 +100,7 @@ export const sfx = {
   scratch() { tone(900, 0.35, 0.22, 'sawtooth', 0, 0.15); noise(0.3, 0.12, 0, 1500); },        // record scratch when the music stops
   buzz() { tone(150, 0.35, 0.22, 'sawtooth'); tone(155, 0.35, 0.18, 'sawtooth'); },
   cheer() { // a short crowd swell: many voices made of filtered noise with a wobble
-    try { const a = audio(), t = a.currentTime, d = 1.8, n = a.createBufferSource(), b = a.createBuffer(1, a.sampleRate * d, a.sampleRate), ch = b.getChannelData(0); for (let i = 0; i < ch.length; i++) ch[i] = (Math.random() * 2 - 1) * (0.6 + 0.4 * Math.sin(i / a.sampleRate * 2 * Math.PI * 7)); const f = a.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 1100; f.Q.value = 0.7; const g = a.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.22, t + 0.35); g.gain.exponentialRampToValueAtTime(0.0001, t + d); n.buffer = b; n.connect(f); f.connect(g); g.connect(a.destination); n.start(t); } catch (e) {}
+    try { const a = audio(), t = a.currentTime, d = 1.8, n = a.createBufferSource(), b = a.createBuffer(1, a.sampleRate * d, a.sampleRate), ch = b.getChannelData(0); for (let i = 0; i < ch.length; i++) ch[i] = (Math.random() * 2 - 1) * (0.6 + 0.4 * Math.sin(i / a.sampleRate * 2 * Math.PI * 7)); const f = a.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 1100; f.Q.value = 0.7; const g = a.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.22, t + 0.35); g.gain.exponentialRampToValueAtTime(0.0001, t + d); n.buffer = b; n.connect(f); f.connect(g); g.connect(master()); n.start(t); } catch (e) {}
     [523, 659, 784].forEach((f, i) => tone(f, 0.3, 0.12, 'triangle', 0.1 + i * 0.08));
   },
 };
@@ -141,18 +148,17 @@ function numClips(s) { // "42" -> n42, "2.48" -> n2 point n4 n8; null if any pie
   const out = ['n' + n]; if (d) { out.push('point'); for (const c of d) out.push('n' + c); }
   return out.every(k => clipNames.has(k)) ? out : null;
 }
+// Only whole recorded sentences are spoken (the animation rule: never splice a sentence from pieces).
+// A rep count is one recorded number on its own. Results with numbers stay on screen; the coach comments instead.
+// Anything without a recording is left silent: no robot voice, ever.
 function toClips(text) {
   const parts = [];
   for (let seg of text.split(/(?<=[.!?])\s+/)) {
     seg = seg.trim(); if (!seg) continue;
     const key = slugV(seg), low = seg.toLowerCase().replace(/[.!?]+$/, '').trim();
     if (clipNames.has(key)) { parts.push(key); continue; }
-    let m = /^better than (\d+)% of/.exec(low); if (m) { parts.push(TIERS(+m[1])); continue; }
-    m = /^(\d+(?:\.\d+)?)\s*(.*)$/.exec(low);
-    if (m) { const nc = numClips(m[1]); const u = m[2] ? (UNITS[m[2]] || slugV(m[2])) : null; if (nc && (!u || clipNames.has(u))) { parts.push(...nc); if (u) parts.push(u); continue; } }
-    m = /^(.*?)\s+(\d+(?:\.\d+)?)$/.exec(low);
-    if (m && clipNames.has(slugV(m[1])) && numClips(m[2])) { parts.push(slugV(m[1]), ...numClips(m[2])); continue; }
-    parts.push({ tts: seg });
+    if (/^\d+$/.test(low) && clipNames.has('n' + low)) { parts.push('n' + low); continue; }
+    const m = /^better than (\d+)% of/.exec(low); if (m && clipNames.has(TIERS(+m[1]))) { parts.push(TIERS(+m[1])); continue; }
   }
   return parts;
 }
@@ -179,7 +185,10 @@ async function speakNow(text, gen) {
     if (gen !== voiceGen) return;
     if (typeof p === 'string') {
       const b = await clip(p); if (!b || gen !== voiceGen) continue;
-      const src = a.createBufferSource(); src.buffer = b; src.connect(a.destination); t = Math.max(t, a.currentTime); src.start(t); t += b.duration + 0.04;
+      // a 12 ms fade at both ends so a clip never starts or stops with a click
+      const src = a.createBufferSource(), fg = a.createGain(); src.buffer = b; src.connect(fg); fg.connect(master()); t = Math.max(t, a.currentTime);
+      fg.gain.setValueAtTime(0, t); fg.gain.linearRampToValueAtTime(1, t + 0.012); fg.gain.setValueAtTime(1, t + b.duration - 0.012); fg.gain.linearRampToValueAtTime(0, t + b.duration);
+      src.start(t); t += b.duration + 0.06;
       voiceUntil = t; say.cur = say.cur || []; say.cur.push(src);
     } else {
       await sleep((t - a.currentTime) * 1000);
@@ -457,8 +466,8 @@ export async function run(app) {
   function toggleRec() {
     if (rec) { rec.stop(); return; }
     try {
-      const stream = cv.captureStream(30);
-      const types = ['video/mp4;codecs=avc1', 'video/mp4', 'video/webm;codecs=vp9', 'video/webm'];
+      const stream = cv.captureStream(30); recordingAudio().forEach(tr => stream.addTrack(tr)); // the app's sounds and voice go into the video too
+      const types = ['video/mp4;codecs=avc1,mp4a.40.2', 'video/mp4', 'video/webm;codecs=vp9,opus', 'video/webm'];
       const mt = types.find(t => window.MediaRecorder && MediaRecorder.isTypeSupported(t)) || '';
       rec = new MediaRecorder(stream, mt ? { mimeType: mt, videoBitsPerSecond: 8e6 } : {});
       chunks = []; rec.ondataavailable = e => { if (e.data && e.data.size) chunks.push(e.data); };

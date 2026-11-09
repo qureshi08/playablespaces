@@ -1,5 +1,5 @@
 // The other 44 apps. Most are built from four patterns: rep counter, hold timer, line timer and jump detector.
-import { C, dist, mid, angle, seen, clamp, side, card, text, dashed, panel, beep, say, meter, scoreCard, bigNote, wrap, store, audio, logResult } from './engine.js';
+import { C, dist, mid, angle, seen, clamp, side, card, text, dashed, panel, beep, say, meter, scoreCard, bigNote, wrap, store, audio, master, logResult } from './engine.js';
 import { PROFILE, jumpRank, balanceRank, plankRank, reactionRank, rankLine } from './norms.js';
 
 const L = (a, b, u) => a + (b - a) * u;
@@ -594,7 +594,7 @@ freezedance: {
   reset(E) { this.stop(); this.st = { phase: 'idle', out: new Set(), moved: [] }; },
   play(E) {
     this.stop(); const a = audio(); const notes = [262, 330, 392, 523, 392, 330]; let i = 0;
-    this.iv = setInterval(() => { const o = a.createOscillator(), gn = a.createGain(); o.type = 'triangle'; o.frequency.value = notes[i++ % notes.length] * (i % 8 < 4 ? 1 : 1.25); gn.gain.setValueAtTime(0.25, a.currentTime); gn.gain.exponentialRampToValueAtTime(0.001, a.currentTime + 0.22); o.connect(gn); gn.connect(a.destination); o.start(); o.stop(a.currentTime + 0.25); if (i % 2) beep(110, 0.05, 0.3, 'sine'); }, 250);
+    this.iv = setInterval(() => { const o = a.createOscillator(), gn = a.createGain(); o.type = 'triangle'; o.frequency.value = notes[i++ % notes.length] * (i % 8 < 4 ? 1 : 1.25); gn.gain.setValueAtTime(0.25, a.currentTime); gn.gain.exponentialRampToValueAtTime(0.001, a.currentTime + 0.22); o.connect(gn); gn.connect(master()); o.start(); o.stop(a.currentTime + 0.25); if (i % 2) beep(110, 0.05, 0.3, 'sine'); }, 250);
   },
   stop() { clearInterval(this.iv); },
   frame(E) {
