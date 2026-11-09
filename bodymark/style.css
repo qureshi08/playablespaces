@@ -22,6 +22,13 @@ button.rec.on{background:var(--coral);color:#fff}
 .bodyage p{margin:0 0 12px;font-weight:700}
 .bodyage .go{display:inline-block;background:var(--ink);color:#fff;font-weight:900;border-radius:99px;padding:8px 16px}
 .bodyage canvas{position:absolute;right:6px;bottom:0;width:130px;height:162px}
+.bodyage.big{padding:14px 14px 20px}
+.bodyage.big canvas.pv{position:static;display:block;width:100%;height:auto;aspect-ratio:4/3;border-radius:22px;margin-bottom:14px;background:#fff}
+.drop{display:flex;gap:14px;align-items:center;background:var(--soft);border-radius:24px;padding:12px}
+.drop canvas.pv{width:120px;height:90px;border-radius:16px;flex:none;filter:grayscale(.2)}
+.drop b{display:block;font-family:'Archivo',sans-serif;font-weight:900;font-stretch:80%;font-size:22px;line-height:1.05;margin:4px 0}
+.drop .eyebrow{font-weight:900;font-size:12px;letter-spacing:.06em;color:var(--violet)}
+.drop .soon{display:inline-block;background:var(--ink);color:#fff;font-weight:900;font-size:13px;border-radius:99px;padding:3px 10px}
 .sec{font-family:'Archivo',sans-serif;font-weight:900;font-stretch:80%;font-size:30px;margin:30px 0 10px}
 .sec span{font-family:'Nunito';font-size:15px;font-weight:700;color:var(--grey);font-stretch:100%;margin-left:6px}
 .sec.hard{color:var(--coral)}
