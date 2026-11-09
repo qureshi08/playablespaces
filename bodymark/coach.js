@@ -3,6 +3,7 @@
 // Flow from the UX research: setup gate (whole body, in a plank) -> spoken countdown -> count only real reps out loud ->
 // ends by itself when you stand up -> result. No buttons while you train; every element has its own fixed zone.
 import { C, seen, angle, side, clamp, text, say, comment, sfx, scribble } from './engine.js';
+import { pushupRank, rankLine } from './norms.js';
 
 const fromHoriz = (a, b) => Math.abs(Math.atan2(Math.abs(b.y - a.y), Math.abs(b.x - a.x)) * 180 / Math.PI);
 // one zone each, drawn in this order, never stacked: TOP (cue or count), MID (nothing, the person), BOTTOM (depth bar)
@@ -14,7 +15,12 @@ function pill(g, E, s, y, size, col = '#fff', bg = 'rgba(18,16,31,.72)') {
 }
 
 export const PUSHUPS = {
-  id: 'pushups', title: 'push ups', hook: 'The AI only counts real push ups.', immersive: true, model: 'full',
+  id: 'pushups', title: 'push ups', hook: 'Only full reps count. See where you rank.', immersive: true, model: 'full',
+  // age and sex pick the norms table for the rank; remembered after the first go (global settings)
+  settings: [
+    { k: 'age', label: 'your age', def: 25, global: true },
+    { k: 'sex', label: 'rank me against', type: 'select', options: ['men', 'women'], def: 'men', global: true },
+  ],
   setup: [
     'Lean your phone against your shoe or a bottle on the ground, about 2 steps away, a little to the side of you.',
     'Get into a plank. The coach starts by itself when it can see all of you.',
@@ -57,10 +63,13 @@ export const PUSHUPS = {
   },
   finish(E) {
     const st = this.st; st.state = 'done';
+    const r = pushupRank(st.n, E.S.age, E.S.sex), line = rankLine(r);
     say('Done. Nice work.');
-    if (st.n > 0) E.log(st.n, 'reps', 'high', null, { pill: st.no ? st.no + ' HALF REPS CALLED OUT' : 'ZERO HALF REPS', who: 'real push ups only' });
+    if (st.n > 0) { say(line, { queue: true }); E.log(st.n, 'reps', 'high', line); }
     document.getElementById('doneN').textContent = st.n;
+    document.getElementById('doneRank').innerHTML = st.n > 0 ? `<b>better than ${r.p}%</b><span>of ${r.who}</span>` : 'no full reps yet. go again.';
     document.getElementById('doneSub').textContent = st.no ? `${st.no} half rep${st.no > 1 ? 's' : ''} didn't count` : 'not a single half rep. clean.';
+    document.getElementById('doneSrc').textContent = st.n > 0 ? 'ranked with ' + r.src : '';
     document.getElementById('done').classList.add('on');
   },
   draw(g, E) {

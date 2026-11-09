@@ -278,6 +278,7 @@ const LABELS = {
   balance: ['Wobbly', 'Steady-ish', 'Steady', 'Rock solid', 'Statue mode'],
   reaction: ['Sleepy thumbs', 'Normal human', 'Quick', 'Lightning hands', 'Ninja reflexes'],
   plank: ['Jelly core', 'Holding on', 'Solid', 'Iron core', 'Plank lord'],
+  pushups: ['Just started', 'Getting there', 'Solid', 'Strong arms', 'Push up machine'],
   bodyage: ['Time to move more', 'About your age', 'Younger than you look', 'Way younger', 'Ageless'],
   _: ['Just started', 'Getting there', 'Solid', 'Strong', 'Elite'],
 };
@@ -302,7 +303,7 @@ export async function run(app) {
       E.result = { v, unit, better, rank, extra };
       { const prev = store.get('moves:history', []).filter(x => x.a === app.id && x.u === unit).slice(0, -1).map(x => x.v); const isBest = prev.length && (better === 'low' ? v < Math.min(...prev) : v > Math.max(...prev)); (isBest ? sfx.best : sfx.result)();
         // the coach reacts once the result line has been said: new best first, otherwise by how good the rank is
-        const pm = rank && /Better than (d+)%/.exec(rank), p = pm ? +pm[1] : null;
+        const pm = rank && /Better than (\d+)%/.exec(rank), p = pm ? +pm[1] : null;
         if (isBest) { setTimeout(() => sfx.cheer(), 250); comment('newBest', { gap: 0 }); }
         else if (p != null) comment(p >= 70 ? 'resultHigh' : p >= 40 ? 'resultMid' : 'resultLow', { chance: 0.85, gap: 0 }); }
       // snapshot a moment later, so the photo shows the score on screen
@@ -383,7 +384,7 @@ export async function run(app) {
       y += 200; if (r.extra.who) { text(x, F, r.extra.who, W / 2, y, 3.6, '#fff', 700); y += 90; }
       if (r.extra.label) { text(x, F, r.extra.label, W / 2, y, 6, '#fff', 900); y += 40; }
     } else if (m) {
-      const p = +m[1], pill = 'TOP ' + Math.max(1, 100 - p) + '%', pw = measure(x, F, pill, 6, 900) + 120;
+      const p = +m[1], pill = p >= 50 ? 'TOP ' + Math.max(1, 100 - p) + '%' : 'BETTER THAN ' + p + '%', pw = measure(x, F, pill, 6, 900) + 120;
       x.beginPath(); x.roundRect(W / 2 - pw / 2, y, pw, 120, 60); x.fillStyle = acc; x.fill(); text(x, F, pill, W / 2, y + 62, 6, C.ink, 900);
       y += 180; x.beginPath(); x.roundRect(150, y, 780, 22, 11); x.fillStyle = 'rgba(255,255,255,.35)'; x.fill();
       const mx = 150 + 780 * p / 100; x.beginPath(); x.arc(mx, y + 11, 34, 0, 7); x.fillStyle = acc; x.fill(); x.lineWidth = 8; x.strokeStyle = bg; x.stroke();
