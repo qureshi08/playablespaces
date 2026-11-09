@@ -337,7 +337,7 @@ export async function run(app) {
   /* bottom bar buttons */
   const bar = $('#bar'); E.bar = bar; E.share = () => shareCard();
   const addBtn = (label, fn, cls = '') => { const b = document.createElement('button'); b.textContent = label; b.className = cls; b.onclick = e => { sfx.tap(); fn(e); }; bar.appendChild(b); return b; };
-  addBtn('←', () => { location.href = './'; }, 'icon');
+  addBtn('←', () => E.leave('./'), 'icon');
   if (!app.noCamera) addBtn('Flip', async () => {
     const cams = (await navigator.mediaDevices.enumerateDevices()).filter(d => d.kind === 'videoinput');
     if (cams.length > 1 && !/iPhone|iPad|Android/i.test(navigator.userAgent)) { const i = cams.findIndex(c => c.deviceId === E.camId); S.cam = cams[(i + 1) % cams.length].deviceId; }
@@ -482,15 +482,27 @@ export async function run(app) {
       rec.start(500); E.recording = true; E.hookUntil = E.now() + 2.8; recBtn.textContent = E.miniRec ? '■' : '■ Stop'; recBtn.classList.add('on');
     } catch (e) { E.toast('Recording is not supported here. Use the phone screen recorder.', 3500); rec = null; }
   }
+  // A recording is never lost by leaving: back, home and the end of a test all stop it first and ask to save.
+  let unsaved = null, afterSave = null;
+  const goOn = () => { const h = afterSave; afterSave = null; if (h) location.href = h; };
+  E.stopRec = () => { if (rec && rec.state !== 'inactive') rec.stop(); };
+  E.leave = href => {
+    if (rec) { afterSave = href; rec.stop(); return; }                  // onstop opens the save sheet
+    if (unsaved) { afterSave = href; $('#saveSheet').classList.add('on'); return; }
+    location.href = href;
+  };
   function offerSave(blob, type) {
     const ext = type.includes('mp4') ? 'mp4' : 'webm', file = new File([blob], `${app.id}-${Date.now()}.${ext}`, { type });
+    unsaved = file;
     const sheet = $('#saveSheet'); sheet.classList.add('on');
     $('#saveBtn').onclick = async () => {
-      try { if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file] }); sheet.classList.remove('on'); return; } } catch (e) { if (e.name === 'AbortError') return; }
-      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = file.name; a.click(); sheet.classList.remove('on');
+      try { if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file] }); unsaved = null; sheet.classList.remove('on'); goOn(); return; } } catch (e) { if (e.name === 'AbortError') return; }
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = file.name; a.click(); unsaved = null; sheet.classList.remove('on'); setTimeout(goOn, 800);
     };
-    $('#closeSave').onclick = () => sheet.classList.remove('on');
+    $('#closeSave').onclick = () => { unsaved = null; sheet.classList.remove('on'); goOn(); };
   }
+  // a reload or tab close with a video still unsaved gets the browser's own "leave page?" warning
+  addEventListener('beforeunload', e => { if ((rec || unsaved) && !afterSave) { e.preventDefault(); e.returnValue = ''; } });
 
   /* start button */
   $('#startBtn').onclick = async () => {

@@ -39,7 +39,7 @@
   <div id="doneSrc" class="src"></div>
 </div></div>
 <div id="toast"></div>
-<div id="saveSheet"><div class="box"><p>Your video is ready.</p><button id="saveBtn" class="go">Save or share</button><button id="closeSave">Close</button></div></div>
+<div id="saveSheet"><div class="box"><p>your video is ready.</p><button id="saveBtn" class="go">save video</button><button id="closeSave">don't save</button></div></div>
 <script type="module">
 import { run } from './engine.js';
 import { ALL } from './all.js';
@@ -56,6 +56,8 @@ const E = await run(app);
 // result screen buttons (coach apps)
 document.getElementById('doneShare').onclick = () => E && E.share();
 document.getElementById('doneAgain').onclick = () => { document.getElementById('done').classList.remove('on'); app.reset(E); };
+// home from the result sheet goes through the same guard as the back button, so a recording is never dropped
+document.querySelector('#done .homelink').onclick = e => { e.preventDefault(); E.leave('./'); };
 </script>
 </body>
 </html>

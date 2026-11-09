@@ -64,8 +64,10 @@ export const PUSHUPS = {
   finish(E) {
     const st = this.st; st.state = 'done';
     const r = pushupRank(st.n, E.S.age, E.S.sex), line = rankLine(r);
-    say('Done. Nice work.');
-    if (st.n > 0) { say(line, { queue: true }); E.log(st.n, 'reps', 'high', line); }
+    let spoken = say('Done. Nice work.');
+    if (st.n > 0) { spoken = say(line, { queue: true }); E.log(st.n, 'reps', 'high', line); }
+    // if you were recording, the video ends a moment after the coach says your rank, then asks to save it
+    if (E.recording && E.stopRec) Promise.resolve(spoken).then(() => setTimeout(() => E.stopRec(), 700));
     document.getElementById('doneN').textContent = st.n;
     document.getElementById('doneRank').innerHTML = st.n > 0 ? `<b>better than ${r.p}%</b><span>of ${r.who}</span>` : 'no full reps yet. go again.';
     document.getElementById('doneSub').textContent = st.no ? `${st.no} half rep${st.no > 1 ? 's' : ''} didn't count` : 'not a single half rep. clean.';
