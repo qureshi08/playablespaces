@@ -20,9 +20,9 @@ body.h2{background:var(--violet);color:#fff;min-height:100dvh}
 .h2 .logo{width:150px;height:auto;display:block}
 .h2 h1{font-family:'Archivo',sans-serif;font-weight:900;font-stretch:75%;font-size:clamp(40px,11vw,60px);line-height:.95;margin:14px 0 8px}
 .h2 .sub{font-weight:800;font-size:18px;margin:0 0 18px;opacity:.95}
-.phone{width:min(74vw,290px);aspect-ratio:9/16;margin:0 auto;border-radius:38px;background:#0d0d12;padding:10px;box-shadow:0 24px 60px rgba(18,16,31,.45),inset 0 0 0 2px rgba(255,255,255,.08)}
+.phone{width:clamp(170px,calc((100svh - 400px) * 9 / 16),240px);margin-top:18px!important;aspect-ratio:9/16;margin:0 auto;border-radius:38px;background:#0d0d12;padding:10px;box-shadow:0 24px 60px rgba(18,16,31,.45),inset 0 0 0 2px rgba(255,255,255,.08)}
 .phone canvas{width:100%;height:100%;display:block;border-radius:30px}
-.cta{margin:20px 0 0}
+.cta{margin:4px 0 0}
 .cta a{display:block;text-align:center;text-decoration:none;background:var(--yellow);color:var(--ink);font-family:'Archivo',sans-serif;font-weight:900;font-stretch:85%;font-size:24px;padding:16px;border-radius:99px;box-shadow:0 10px 30px rgba(18,16,31,.35)}
 .h2 .facts{text-align:center;font-weight:800;font-size:14px;opacity:.85;margin:14px 0 0}
 .coaches{background:#fff;color:var(--ink);border-radius:30px 30px 0 0;margin:30px -20px 0;padding:26px 20px calc(24px + env(safe-area-inset-bottom))}
@@ -45,9 +45,9 @@ body.h2{background:var(--violet);color:#fff;min-height:100dvh}
   <canvas class="logo" id="logo" width="560" height="196"></canvas>
   <h1>an ai coach that lives in your phone.</h1>
   <p class="sub">it watches your workout and only counts real reps.</p>
-  <div class="phone"><canvas id="demo" width="540" height="960"></canvas></div>
   <div class="cta"><a href="app.html?a=pushups" id="go">start push ups →</a></div>
   <p class="facts">free · no app · no sign up · video stays on your phone</p>
+  <div class="phone"><canvas id="demo" width="540" height="960"></canvas></div>
   <section class="coaches">
     <h2>coaches</h2>
     <p class="lead">a new coach every saturday. all of them work on plain ground.</p>
