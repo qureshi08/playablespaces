@@ -6,50 +6,49 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Bodymark">
 <meta name="theme-color" content="#5B2EFF">
-<meta name="description" content="How old is your body? Three quick tests with your phone camera, about 3 minutes. Free, no app, video stays on your phone.">
-<meta property="og:title" content="Bodymark: how old is your body?">
-<meta property="og:description" content="Three quick camera tests, one number. Then dare a friend to beat you.">
-<title>Bodymark: how old is your body?</title>
+<meta name="description" content="an ai coach that lives in your phone. lean it on your shoe, it watches your push ups, counts only real reps and talks to you. free, no app.">
+<meta property="og:title" content="bodymark: an ai coach that lives in your phone">
+<meta property="og:description" content="it watches your push ups, counts only real reps, and calls out every half rep. free, no app.">
+<title>bodymark: an ai coach that lives in your phone</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,700..900&family=Nunito:wght@600;700;800;900&family=Shantell+Sans:wght@800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 </head>
 <body class="home">
-<!-- Launch small (the Farza way): one product on the page, Body Age. Other tests unlock one a week as drops. -->
+<!-- One thing, the Clicky way: "an ai buddy that lives on your computer" -> "an ai coach that lives in your phone". One ask. -->
 <header class="hero">
   <div class="wrap">
     <div class="brand"><canvas id="logo" width="560" height="196"></canvas></div>
-    <h1>How old is your body?</h1>
-    <p>Three quick tests with your phone camera. About 3 minutes. One number. Then dare a friend to beat you.</p>
-    <p class="small">Free. No app, no sign up. Video never leaves your phone.</p>
+    <h1>an ai coach that lives in your phone.</h1>
+    <p>lean it on your shoe. it watches your push ups, counts only real reps, and calls out every half rep.</p>
+    <p class="small">free. no app, no sign up. video never leaves your phone.</p>
   </div>
 </header>
 <main class="wrap">
-  <a class="bodyage big" href="app.html?a=bodyage">
-    <canvas class="pv" data-id="bodyage" width="400" height="300"></canvas>
-    <span class="eyebrow">BODY AGE</span>
-    <h2>Find out in 3 minutes</h2>
-    <p>Balance with your eyes closed, jump, and sit to stand. Your body age comes from published averages for every age.</p>
-    <span class="go">Start →</span>
+  <a class="bodyage big" href="app.html?a=pushups">
+    <canvas class="pv" data-id="pushup" width="400" height="300"></canvas>
+    <span class="eyebrow">TODAY'S COACH</span>
+    <h2>push ups. real reps only.</h2>
+    <p>takes 1 minute. phone on the ground, 2 steps away.</p>
+    <span class="go">start →</span>
   </a>
   <div id="drops"></div>
-  <p class="note">Body Age is a wellness estimate for fun and motivation, not a diagnosis.</p>
-  <div class="tip"><b>On iPhone:</b> tap Share, then Add to Home Screen, so Bodymark opens like an app.</div>
-  <p class="foot">Made by Anas Qureshi</p>
+  <div class="tip"><b>on iphone:</b> tap share, then add to home screen, so bodymark opens like an app.</div>
+  <p class="foot">made by anas qureshi, on his morning runs ^ ω ^</p>
 </main>
 <script type="module">
 import { ALL, DROPS, released, nextDrop } from './all.js';
 import { mascot, C, sfx } from './engine.js';
 import { drawDemo } from './demos.js';
-const fmt = d => new Date(d + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
-const out = released().filter(id => id !== 'bodyage'), nd = nextDrop();
+const fmt = d => new Date(d + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }).toLowerCase();
+const out = released().filter(id => id !== 'pushups'), nd = nextDrop();
 let html = '';
 if (nd) {
   const days = Math.ceil((new Date(nd.date + 'T12:00:00') - new Date()) / 864e5);
-  html += `<h3 class="sec">Next drop <span>a new test every Saturday</span></h3>
-  <div class="drop next"><canvas class="pv" data-id="${nd.id}" width="400" height="300"></canvas><div><span class="eyebrow">DROP ${DROPS.indexOf(nd) + 1} · ${fmt(nd.date).toUpperCase()}</span><b>${nd.pitch}</b><span class="soon">${days <= 1 ? 'unlocks tomorrow' : 'unlocks in ' + days + ' days'}</span></div></div>`;
+  html += `<h3 class="sec">next drop <span>a new coach every saturday</span></h3>
+  <div class="drop next"><canvas class="pv" data-id="${nd.demo}" width="400" height="300"></canvas><div><span class="eyebrow">DROP ${DROPS.indexOf(nd) + 1} · ${fmt(nd.date)}</span><b>${nd.pitch}</b><span class="soon">${days <= 1 ? 'unlocks tomorrow' : 'unlocks in ' + days + ' days'}</span></div></div>`;
 }
-if (out.length) html += `<h3 class="sec">Out now</h3><div class="list">` + out.slice().reverse().map(id => { const a = ALL[id], d = DROPS.find(x => x.id === id); return `<a class="row" href="app.html?a=${id}"><canvas class="pv" data-id="${id}" width="200" height="150"></canvas><div><b>${a.title}</b><span>${d.pitch}</span></div></a>`; }).join('') + `</div>`;
+if (out.length) html += `<h3 class="sec">out now</h3><div class="list">` + out.slice().reverse().map(id => { const a = ALL[id], d = DROPS.find(x => x.id === id); return `<a class="row" href="app.html?a=${id}"><canvas class="pv" data-id="${d.demo}" width="200" height="150"></canvas><div><b>${a.title}</b><span>${d.pitch}</span></div></a>`; }).join('') + `</div>`;
 document.getElementById('drops').innerHTML = html;
 // moving previews, only the ones on screen, at 12.5 frames a second
 const pvs = [...document.querySelectorAll('canvas.pv')].map((cv, i) => ({ cv, g: cv.getContext('2d'), id: cv.dataset.id, on: false, off: i * 0.37 }));

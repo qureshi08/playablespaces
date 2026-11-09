@@ -334,7 +334,7 @@ export async function run(app) {
   if (app.noCamera) { $('#startState').textContent = 'No camera needed. Turn the sound on.'; }
 
   /* bottom bar buttons */
-  const bar = $('#bar');
+  const bar = $('#bar'); E.bar = bar; E.share = () => shareCard();
   const addBtn = (label, fn, cls = '') => { const b = document.createElement('button'); b.textContent = label; b.className = cls; b.onclick = e => { sfx.tap(); fn(e); }; bar.appendChild(b); return b; };
   addBtn('←', () => { location.href = './'; }, 'icon');
   if (!app.noCamera) addBtn('Flip', async () => {
@@ -544,6 +544,8 @@ export async function run(app) {
         E.msg = '';
         try { app.frame && app.frame(E); } catch (e) { console.error(e); }
         drawFrame(mirror);
+        // coach style apps hide the buttons while the person is training 2 m away (nobody can tap from there)
+        if (app.barVisible) bar.style.display = app.barVisible(E) ? '' : 'none';
       }
       if (!app.noCamera && video.requestVideoFrameCallback) video.requestVideoFrameCallback(step); else requestAnimationFrame(step);
     };
@@ -574,8 +576,9 @@ export async function run(app) {
     if (app.points && (!S.pts || S.pts.length < app.points) && !E.gateMode) card(g, E, [['Press Set spot,', 4, C.ink], ['then tap the ' + app.pointNames[0], 3.4, C.ink, 500]], W / 2, H * 0.4);
     try { app.draw && app.draw(g, E); } catch (e) { console.error(e); }
     if (E.beat != null) card(g, E, [[E.beatWon ? 'Challenge beaten ✓' : 'Beat ' + fmtVal(E.beat, E.beatUnit), 4.2, E.beatWon ? C.ind : C.mad]], W - U * 4, H * 0.2, 'right');
-    if (E.msg) card(g, E, wrap(g, E, E.msg, 3.6, W * 0.85).map(l => [l, 3.6, C.ink, 600]), W / 2, H * 0.86);
+    if (E.msg && !app.immersive) card(g, E, wrap(g, E, E.msg, 3.6, W * 0.85).map(l => [l, 3.6, C.ink, 600]), W / 2, H * 0.86);
     if (E.now() < E.hookUntil) { const lines = wrap(g, E, app.hook, 6, W * 0.84); card(g, E, lines.map(l => [l, 6, '#fff', 900]), W / 2, H * 0.1, 'center', C.violet); }
-    g.save(); g.shadowColor = 'rgba(0,0,0,.45)'; g.shadowBlur = U * 1.5; text(g, E, BRAND, W - U * 3, H - U * 3.5, 4.2, '#fff', 900, 'right'); g.restore();
+    g.save(); g.shadowColor = 'rgba(0,0,0,.45)'; g.shadowBlur = U * 1.5; text(g, E, BRAND, W - U * 3, U * 5, 4.2, '#fff', 900, 'right'); g.restore(); // top right: never under the buttons
   }
+  return E; // the page uses it for the result screen buttons
 }

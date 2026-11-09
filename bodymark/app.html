@@ -28,6 +28,14 @@
     <p class="privacy">🔒 Video never leaves your phone. Tracking runs on your device. Nothing is uploaded or stored.</p>
   </div>
 </div>
+<div id="done"><div class="box">
+  <span class="eyebrow">real push ups</span>
+  <div id="doneN" class="num">0</div>
+  <p id="doneSub"></p>
+  <button id="doneShare" class="go">share it →</button>
+  <button id="doneAgain">go again</button>
+  <a href="./" class="homelink">home</a>
+</div></div>
 <div id="toast"></div>
 <div id="saveSheet"><div class="box"><p>Your video is ready.</p><button id="saveBtn" class="go">Save or share</button><button id="closeSave">Close</button></div></div>
 <script type="module">
@@ -42,7 +50,10 @@ import('./demos.js').then(({ drawDemo }) => {
   const pv = document.getElementById('preview').getContext('2d'); let last = -1;
   (function tick(now) { if (document.getElementById('intro').classList.contains('off')) return; const f = Math.floor(now / 80); if (f !== last) { last = f; drawDemo(id, pv, f * 0.08); } requestAnimationFrame(tick); })(0);
 });
-run(app);
+const E = await run(app);
+// result screen buttons (coach apps)
+document.getElementById('doneShare').onclick = () => E && E.share();
+document.getElementById('doneAgain').onclick = () => { document.getElementById('done').classList.remove('on'); app.reset(E); };
 </script>
 </body>
 </html>
