@@ -3,7 +3,9 @@
 // Flow from the UX research: setup gate (whole body, in a plank) -> spoken countdown -> count only real reps out loud ->
 // ends by itself when you stand up -> result. No buttons while you train; every element has its own fixed zone.
 import { C, seen, angle, side, clamp, text, say, comment, sfx, scribble } from './engine.js';
-import { pushupRank, rankLine } from './norms.js';
+import { rankLine } from './norms.js';
+import { pushupRanks } from './ranks.js';
+import { store } from './engine.js';
 
 const fromHoriz = (a, b) => Math.abs(Math.atan2(Math.abs(b.y - a.y), Math.abs(b.x - a.x)) * 180 / Math.PI);
 // one zone each, drawn in this order, never stacked: TOP (cue or count), MID (nothing, the person), BOTTOM (depth bar)
@@ -77,19 +79,23 @@ export const PUSHUPS = {
   },
   finish(E) {
     const st = this.st; st.state = 'done';
-    const r = pushupRank(st.n, E.S.age, E.S.sex), line = rankLine(r);
+    // your earlier sets, read before this one is logged, for the personal best badge
+    const prev = store.get('moves:history', []).filter(x => x.a === 'pushups' && x.u === 'reps').map(x => x.v);
+    const R = pushupRanks(st.n, st.no, E.S.age, E.S.sex, prev), r = R.rank, line = rankLine(r);
     // everything the share studio draws from
-    this.shareData = { n: st.n, no: st.no, rank: r, trace: st.trace, reps: st.reps, t0: st.t0 || E.now(), t1: E.now(), date: new Date(),
+    this.shareData = { n: st.n, no: st.no, rank: r, ranks: R, trace: st.trace, reps: st.reps, t0: st.t0 || E.now(), t1: E.now(), date: new Date(),
       photo: st.best && st.best.img, pts: st.best && st.best.pts, link: location.origin + location.pathname + '?a=pushups&beat=' + st.n };
     document.getElementById('doneShare').style.display = st.n > 0 ? '' : 'none';
     let spoken = say('Done. Nice work.');
-    if (st.n > 0) { spoken = say(line, { queue: true }); E.log(st.n, 'reps', 'high', line); }
+    // the age rank is only said out loud when it is good news; it is always on the result screen
+    if (st.n > 0) { if (r.p >= 40) spoken = say(line, { queue: true }); E.log(st.n, 'reps', 'high', line); }
     // if you were recording, the video ends a moment after the coach says your rank, then asks to save it
     if (E.recording && E.stopRec) Promise.resolve(spoken).then(() => setTimeout(() => E.stopRec(), 700));
     document.getElementById('doneN').textContent = st.n;
-    document.getElementById('doneRank').innerHTML = st.n > 0 ? `<b>better than ${r.p}%</b><span>of ${r.who}</span>` : 'no full reps yet. go again.';
-    document.getElementById('doneSub').textContent = st.no ? `${st.no} half rep${st.no > 1 ? 's' : ''} didn't count` : 'not a single half rep. clean.';
-    document.getElementById('doneSrc').textContent = st.n > 0 ? 'ranked with ' + r.src : '';
+    // the headline is your strongest real win; every ranking is listed under it, the age one included
+    document.getElementById('doneRank').innerHTML = st.n > 0 ? `<b>${R.head.value}</b><span>${R.head.sub}</span>` : '<b>no full reps yet</b><span>go all the way down and try again</span>';
+    document.getElementById('doneSub').innerHTML = st.n > 0 ? R.list.filter(b => b !== R.head).map(b => `<li class="${b.win ? 'win' : ''}"><span>${b.title}</span><b>${b.value}</b></li>`).join('') : '';
+    document.getElementById('doneSrc').textContent = st.n > 0 ? 'clubs: Harvard push up study 2019 · age: ' + r.src : '';
     document.getElementById('done').classList.add('on');
   },
   studio() { if (this.shareData) import('./share.js').then(m => m.openStudio(this.shareData)); },

@@ -26,6 +26,9 @@ function logo(g, x, y, h, col = '#fff', align = 'left', shadow = 0) {
 }
 
 const rankPill = p => p >= 50 ? 'top ' + Math.max(1, 100 - p) + '%' : 'better than ' + p + '%';
+// the cards lead with your strongest real win (ranks.js); older data without it falls back to the age rank
+const head = D => D.ranks ? D.ranks.head.value : rankPill(D.rank.p);
+const second = D => D.ranks ? (D.ranks.tags[0] || D.ranks.head.sub) : 'of ' + D.rank.who;
 const mmss = s => { s = Math.max(0, Math.round(s)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
 const when = d => {
   const day = d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }).replace(',', '').toLowerCase();
@@ -95,8 +98,8 @@ function cardPhoto(g, D) {
   T(g, 'real push ups', 72, 1235, 50, '#fff', { w: 900, fam: 'Nunito' });
   let ns = 430; while (tw(g, String(D.n), ns) > W - 144 && ns > 200) ns -= 10;
   T(g, String(D.n), 60, 1235 + ns * 0.86, ns, '#fff');
-  const py = 1235 + ns * 0.86 + 50, pw = pill(g, rankPill(D.rank.p), 72, py, 64, C.yellow, INK);
-  T(g, 'of ' + D.rank.who, 72 + pw + 26, py + 54, 38, '#fff', { w: 800, fam: 'Nunito' });
+  const py = 1235 + ns * 0.86 + 50, pw = pill(g, head(D), 72, py, 64, C.yellow, INK);
+  T(g, second(D), 72 + pw + 26, py + 54, 38, '#fff', { w: 800, fam: 'Nunito' });
   trace(g, D, 72, 1800, W - 144, 46, { col: 'rgba(255,255,255,.9)', lw: 6 });
 }
 
@@ -111,12 +114,12 @@ function cardTrace(g, D) {
   let ns = 360; while (tw(g, String(D.n), ns) > 520 && ns > 200) ns -= 10;
   const nw = T(g, String(D.n), 60, 1060 + ns * 0.86, ns, '#fff');
   const cx = 60 + nw + 40; T(g, 'real', cx, 1170, 64, '#fff', { w: 900, fam: 'Nunito' }); T(g, 'push ups', cx, 1240, 64, '#fff', { w: 900, fam: 'Nunito' });
-  pill(g, rankPill(D.rank.p), cx, 1280, 56, C.yellow, INK);
+  pill(g, head(D), cx, 1280, 56, C.yellow, INK);
   // Strava style stat row
-  const y = 1520, cols = [['half reps', String(D.no)], ['time', mmss(D.t1 - D.t0)], D.rank.p >= 50 ? ['top', Math.max(1, 100 - D.rank.p) + '%'] : ['better than', D.rank.p + '%']];
+  const y = 1520, cols = [['half reps', String(D.no)], ['time', mmss(D.t1 - D.t0)], D.ranks ? ['club', D.ranks.list[1].short] : D.rank.p >= 50 ? ['top', Math.max(1, 100 - D.rank.p) + '%'] : ['better than', D.rank.p + '%']];
   g.fillStyle = 'rgba(255,255,255,.14)'; g.fillRect(72, y - 70, W - 144, 3);
   cols.forEach(([k, v], i) => { const x = 72 + i * (W - 144) / 3; T(g, k, x, y, 34, 'rgba(255,255,255,.6)', { w: 800, fam: 'Nunito' }); T(g, v, x, y + 120, 112, '#fff'); });
-  T(g, 'ranked against ' + D.rank.who, 72, 1790, 32, 'rgba(255,255,255,.55)', { w: 700, fam: 'Nunito' });
+  T(g, 'vs ' + D.rank.who + ': ' + (D.rank.p >= 50 ? 'top ' + Math.max(1, 100 - D.rank.p) + '%' : 'better than ' + D.rank.p + '%'), 72, 1790, 32, 'rgba(255,255,255,.55)', { w: 700, fam: 'Nunito' });
   T(g, 'only full reps count', 72, 1840, 32, 'rgba(255,255,255,.55)', { w: 700, fam: 'Nunito' });
 }
 
@@ -126,7 +129,7 @@ function cardSticker(g, D) {
   let ns = 330; while (tw(g, String(D.n), ns) > W - 200 && ns > 180) ns -= 10;
   T(g, String(D.n), W / 2, 1020 + ns * 0.86, ns, '#fff', { align: 'center', shadow: 40 });
   T(g, 'real push ups', W / 2, 1420, 62, '#fff', { w: 900, fam: 'Nunito', align: 'center', shadow: 26 });
-  T(g, rankPill(D.rank.p) + ' of ' + D.rank.who, W / 2, 1500, 42, C.yellow, { w: 900, fam: 'Nunito', align: 'center', shadow: 22 });
+  T(g, head(D) + (D.ranks && D.ranks.tags[0] ? ' · ' + D.ranks.tags[0] : ''), W / 2, 1500, 42, C.yellow, { w: 900, fam: 'Nunito', align: 'center', shadow: 22 });
   logo(g, W / 2, 1640, 52, '#fff', 'center', 22);
 }
 
@@ -197,7 +200,7 @@ export async function openStudio(D) {
   }
 
   const file = i => new File([out[i].b], `bodymark-pushups-${D.n}-${STYLES[i].id}.png`, { type: 'image/png' });
-  const msg = `${D.n} real push ups, ${rankPill(D.rank.p)} of ${D.rank.who}. beat me: ${D.link}`;
+  const msg = `${D.n} real push ups. ${head(D)}. beat me: ${D.link}`;
   async function share(i) {
     if (!out[i]) return; const f = file(i);
     try { if (navigator.canShare && navigator.canShare({ files: [f] })) { await navigator.share({ files: [f], text: msg }); return; } } catch (e) { if (e.name === 'AbortError') return; }
@@ -216,5 +219,5 @@ export async function openStudio(D) {
 export function demoData() {
   const trace = [], reps = []; let t = 0;
   for (let r = 0; r < 18; r++) { const deep = r % 7 !== 4, dd = deep ? 0.85 + Math.random() * 0.15 : 0.5; for (let k = 0; k <= 24; k++) { const d = Math.sin(k / 24 * Math.PI) * dd; trace.push({ t, d }); t += 0.066; } reps.push({ t: t - 0.8, d: dd, ok: deep }); for (let k = 0; k < 4; k++) { trace.push({ t, d: 0.02 }); t += 0.066; } }
-  return { n: reps.filter(r => r.ok).length, no: reps.filter(r => !r.ok).length, rank: { p: 72, who: 'men aged 20 to 29' }, trace, reps, t0: 0, t1: t, date: new Date(), photo: null, pts: null, link: location.origin + '/bodymark/app.html?a=pushups&beat=16' };
+  const n = reps.filter(r => r.ok).length, no = reps.length - n; return { ranks: null, n, no: reps.filter(r => !r.ok).length, rank: { p: 72, who: 'men aged 20 to 29' }, trace, reps, t0: 0, t1: t, date: new Date(), photo: null, pts: null, link: location.origin + '/bodymark/app.html?a=pushups&beat=16' };
 }
