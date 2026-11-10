@@ -26,7 +26,15 @@ export const PUSHUPS = {
     'Get into a plank. The coach starts by itself when it can see all of you.',
     'Go all the way down for every rep. Half reps get called out. Stand up when you are done.',
   ],
-  reset(E) { this.st = { state: 'setup', n: 0, no: 0, phase: 'top', d: 0, deep: false, seen0: 0, lastMove: 0, best: null, cue: '', cueAt: 0 }; },
+  reset(E) { this.st = { state: 'setup', n: 0, no: 0, phase: 'top', d: 0, deep: false, seen0: 0, lastMove: 0, best: null, cue: '', cueAt: 0, trace: [], reps: [], lt: 0, cur: null }; this.shareData = null; },
+  // a still of the camera (mirrored like the screen) plus the skeleton at that moment, for the photo share card
+  grab(E, into) {
+    const v = E.video, cv = document.getElementById('cv'); if (!v || !v.videoWidth || !E.Sm) return null;
+    const k = Math.min(1, 1280 / Math.max(cv.width, cv.height)), c = into || document.createElement('canvas');
+    c.width = Math.round(cv.width * k); c.height = Math.round(cv.height * k);
+    const g = c.getContext('2d'); g.save(); if (E.facing === 'user') { g.translate(c.width, 0); g.scale(-1, 1); } g.drawImage(v, 0, 0, c.width, c.height); g.restore();
+    return { img: c, pts: E.Sm.map(p => ({ x: p.x * k, y: p.y * k, v: p.v })) };
+  },
   // depth of the current rep from the elbow angle (side or diagonal view): 0 = arms straight, 1 = elbows at 90 degrees
   read(E) {
     const P = E.Sm; if (!P) return { ok: false, why: 'far' };
@@ -49,12 +57,18 @@ export const PUSHUPS = {
     if (r.ok && r.flat) st.lastFlat = now;
     if (r.ok) {
       st.d = r.d;
+      // the rep trace: depth about 15 times a second, for the share cards
+      if (!st.t0) st.t0 = now;
+      if (now - st.lt > 0.066 && st.trace.length < 2400) { st.trace.push({ t: now, d: Math.min(1.1, r.d) }); st.lt = now; }
       if (st.phase === 'top' && r.d > 0.35) { st.phase = 'move'; st.deep = false; st.lastMove = now; }
       if (st.phase === 'move') {
         if (r.d >= 0.75 && !st.deep) { st.deep = true; }
+        // the deepest point of this rep; a still is grabbed at it, kept only if the rep counts and it beats the last one
+        if (!st.cur || r.d > st.cur.d) { st.cur = { t: now, d: r.d }; if (r.d >= 0.6 && (!st.best || r.d > st.best.d)) st.cand = this.grab(E, st.cand && st.cand.img !== (st.best && st.best.img) ? st.cand.img : null); }
         if (r.d < 0.2) {
           if (st.deep) { st.n++; say(String(st.n)); st.flash = { ok: true, t: now }; } else { st.no++; say('No rep.'); st.flash = { ok: false, t: now }; }
-          st.phase = 'top'; st.lastMove = now;
+          if (st.cur) { st.reps.push({ t: st.cur.t, d: st.cur.d, ok: st.deep }); if (st.deep && st.cand && (!st.best || st.cur.d > st.best.d)) st.best = { ...st.cand, d: st.cur.d }; }
+          st.cur = null; st.cand = null; st.phase = 'top'; st.lastMove = now;
         }
       }
     }
@@ -64,6 +78,10 @@ export const PUSHUPS = {
   finish(E) {
     const st = this.st; st.state = 'done';
     const r = pushupRank(st.n, E.S.age, E.S.sex), line = rankLine(r);
+    // everything the share studio draws from
+    this.shareData = { n: st.n, no: st.no, rank: r, trace: st.trace, reps: st.reps, t0: st.t0 || E.now(), t1: E.now(), date: new Date(),
+      photo: st.best && st.best.img, pts: st.best && st.best.pts, link: location.origin + location.pathname + '?a=pushups&beat=' + st.n };
+    document.getElementById('doneShare').style.display = st.n > 0 ? '' : 'none';
     let spoken = say('Done. Nice work.');
     if (st.n > 0) { spoken = say(line, { queue: true }); E.log(st.n, 'reps', 'high', line); }
     // if you were recording, the video ends a moment after the coach says your rank, then asks to save it
@@ -74,6 +92,7 @@ export const PUSHUPS = {
     document.getElementById('doneSrc').textContent = st.n > 0 ? 'ranked with ' + r.src : '';
     document.getElementById('done').classList.add('on');
   },
+  studio() { if (this.shareData) import('./share.js').then(m => m.openStudio(this.shareData)); },
   draw(g, E) {
     const st = this.st, U = E.U, W = E.W, H = E.H, now = E.now(), hookOn = now < E.hookUntil;
     if (st.state === 'setup') {
